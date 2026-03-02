@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini 3 Prompt Composer</title>
+    <title>Prompt Optimizer</title>
     <!-- Vue 3 & Tailwind CSS -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -16,7 +16,6 @@
         body { font-family: 'Segoe UI', Roboto, Helvetica, sans-serif; background-color: #0b1120; color: #e2e8f0; }
         .glass { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(148, 163, 184, 0.1); }
         .glass-input { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(51, 65, 85, 0.5); }
-        textarea { field-sizing: content; }
         
         /* Custom Scrollbar Styling (Fallback/Enhancement) */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -47,14 +46,8 @@
                 <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 tracking-tight">
                     <i class="fa-solid fa-layer-group mr-2"></i>Gemini 3 Prompt Composer
                 </h1>
-                <p class="text-slate-500 text-sm font-medium mt-1">{{ t('appSubtitle') }}</p>
+                <p class="text-slate-500 text-sm font-medium mt-1">Prompt Optimizer</p>
             </div>
-            <!-- Language Selector -->
-            <select v-model="currentLang" class="bg-slate-900 text-slate-400 text-xs py-1 px-3 rounded border border-slate-700 outline-none hover:border-blue-500 transition">
-                <option value="en">English (Default)</option>
-                <option value="zh">繁體中文 (Taiwan)</option>
-                <option value="ja">日本語</option>
-            </select>
         </header>
 
         <!-- API Settings -->
@@ -62,8 +55,8 @@
             <!-- API Key -->
             <div class="flex items-center gap-3">
                 <div class="bg-yellow-500/10 p-2 rounded text-yellow-500"><i class="fa-solid fa-key"></i></div>
-                <input v-model="apiKey" type="password" :placeholder="t('apiKeyPlaceholder')" class="glass-input flex-1 outline-none text-sm text-slate-200 placeholder-slate-600 px-3 py-2 rounded focus:border-yellow-500/50 transition">
-                <button @click="saveKey" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 px-4 py-2 rounded font-medium transition">{{ t('saveKey') }}</button>
+                <input v-model="apiKey" type="password" placeholder="SiliconFlow API Key (sk-...)" class="glass-input flex-1 outline-none text-sm text-slate-200 placeholder-slate-600 px-3 py-2 rounded focus:border-yellow-500/50 transition">
+                <button @click="saveKey" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 px-4 py-2 rounded font-medium transition">Save Key</button>
             </div>
             
             <!-- Model Selection Row -->
@@ -88,6 +81,22 @@
                     </select>
                 </div>
             </div>
+        </div>
+
+        <!-- Add Buttons (Moved to the top) -->
+        <div class="grid grid-cols-4 gap-3" @click.stop>
+            <button @click="addBlock('context')" class="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 py-3 rounded-xl text-xs font-bold border border-slate-700 transition flex flex-col items-center gap-1 group">
+                <i class="fa-solid fa-database text-lg text-purple-500 group-hover:scale-110 transition"></i> CONTEXT
+            </button>
+            <button @click="addBlock('task')" class="bg-blue-900/20 hover:bg-blue-900/40 text-blue-400 hover:text-blue-300 py-3 rounded-xl text-xs font-bold border border-blue-800/50 transition flex flex-col items-center gap-1 group shadow-[0_0_15px_rgba(37,99,235,0.1)]">
+                <i class="fa-solid fa-bullseye text-lg group-hover:scale-110 transition"></i> TASK
+            </button>
+            <button @click="addBlock('code')" class="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 py-3 rounded-xl text-xs font-bold border border-slate-700 transition flex flex-col items-center gap-1 group">
+                <i class="fa-solid fa-code text-lg text-emerald-500 group-hover:scale-110 transition"></i> CODE
+            </button>
+             <button @click="addBlock('constraints')" class="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 py-3 rounded-xl text-xs font-bold border border-slate-700 transition flex flex-col items-center gap-1 group">
+                <i class="fa-solid fa-shield-halved text-lg text-red-400 group-hover:scale-110 transition"></i> RULES
+            </button>
         </div>
 
         <!-- Block List -->
@@ -134,7 +143,7 @@
                         </select>
                     </div>
 
-                    <!-- REQUEST 1: RESTORE CONSTRAINTS DROPDOWN -->
+                    <!-- RESTORE CONSTRAINTS DROPDOWN -->
                     <div v-if="block.type === 'constraints'" class="flex-1 min-w-[150px]">
                         <select @change="(e) => block.content = e.target.value" @click.stop class="w-full bg-slate-800 text-slate-400 text-[10px] py-1 px-2 rounded border border-slate-700/50 outline-none hover:border-red-500/50 transition cursor-pointer">
                             <option value="" disabled selected>🛡️ Load Hallucination Guard...</option>
@@ -177,11 +186,10 @@
 
                 <!-- Textarea -->
                 <div class="p-1">
-                    <!-- Modified: Removed @focus/@blur to allow parent click to handle expansion -->
                     <textarea 
                         v-model="block.content" 
                         class="w-full bg-slate-900/30 text-slate-200 p-4 rounded-b-lg outline-none border-0 resize-none font-mono text-sm leading-relaxed placeholder-slate-600/50 transition-all duration-300 ease-out"
-                        :class="focusedBlock === index ? 'min-h-[200px] bg-slate-800/40' : 'min-h-[80px]'"
+                        :class="focusedBlock === index ? 'h-[300px] bg-slate-800/40 overflow-y-auto' : 'h-[100px] overflow-y-auto'"
                         :placeholder="getPlaceholder(block.type)"></textarea>
                 </div>
                 
@@ -192,19 +200,10 @@
             </div>
         </div>
 
-        <!-- Add Buttons -->
-        <div class="grid grid-cols-4 gap-3 mt-2" @click.stop>
-            <button @click="addBlock('context')" class="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 py-3 rounded-xl text-xs font-bold border border-slate-700 transition flex flex-col items-center gap-1 group">
-                <i class="fa-solid fa-database text-lg text-purple-500 group-hover:scale-110 transition"></i> CONTEXT
-            </button>
-            <button @click="addBlock('task')" class="bg-blue-900/20 hover:bg-blue-900/40 text-blue-400 hover:text-blue-300 py-3 rounded-xl text-xs font-bold border border-blue-800/50 transition flex flex-col items-center gap-1 group shadow-[0_0_15px_rgba(37,99,235,0.1)]">
-                <i class="fa-solid fa-bullseye text-lg group-hover:scale-110 transition"></i> TASK
-            </button>
-            <button @click="addBlock('code')" class="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 py-3 rounded-xl text-xs font-bold border border-slate-700 transition flex flex-col items-center gap-1 group">
-                <i class="fa-solid fa-code text-lg text-emerald-500 group-hover:scale-110 transition"></i> CODE
-            </button>
-             <button @click="addBlock('constraints')" class="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 py-3 rounded-xl text-xs font-bold border border-slate-700 transition flex flex-col items-center gap-1 group">
-                <i class="fa-solid fa-shield-halved text-lg text-red-400 group-hover:scale-110 transition"></i> RULES
+        <!-- Back to Top Button -->
+        <div class="mt-2" @click.stop>
+            <button @click="scrollToPageTop" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 py-3 rounded-xl text-xs font-bold border border-slate-700 transition flex items-center justify-center gap-2 group shadow-sm">
+                <i class="fa-solid fa-arrow-up group-hover:-translate-y-1 transition-transform"></i> BACK TO TOP
             </button>
         </div>
     </div>
@@ -224,7 +223,7 @@
                     <div>
                         <div class="text-sm text-slate-200 font-bold group-hover:text-blue-300 transition">Prompt Repetition</div>
                         <div class="text-[11px] text-slate-500 leading-tight mt-1">
-                            {{ t('repetitionDesc') }}
+                            Repeats the &lt;task&gt; block directly. Improves compliance for non-reasoning tasks. (Note: Redundant if CoT is active).
                             <a href="https://arxiv.org/pdf/2512.14982" target="_blank" class="block mt-1 text-blue-500/80 hover:text-blue-400"><i class="fa-solid fa-paperclip"></i> Paper: Leviathan et al., 2025</a>
                         </div>
                     </div>
@@ -241,20 +240,18 @@
                     <!-- CoT Mode Selector (Visible only if checked) -->
                     <div v-if="settings.addCoT" class="mt-2 pl-7">
                         <select v-model="settings.cotMode" class="w-full bg-slate-900 text-pink-300 text-[10px] py-1.5 px-2 rounded border border-pink-500/20 outline-none hover:border-pink-500/50 transition cursor-pointer">
-                            <!-- Updated: Gemini 3 Specific -->
                             <option value="gemini">Gemini 3 Pro (Agentic Plan-Check-Execute)</option>
                             <option value="classic">Classical (Let's think step-by-step)</option>
                             <option value="table">Chain-of-Table (For Data Analysis)</option>
-                            <!-- NEW: Society of Thought Option -->
                             <option value="society">Society of Thought (Multi-Agent Debate)</option>
                         </select>
                         <div class="text-[11px] text-slate-500 leading-tight mt-2">
-                            {{ t('cotDesc') }}
-                            <!-- Classic (Let's think step-by-step) 論文連結 -->
+                            Appends strict "Plan-Check-Execute" instruction (Gemini 3 Native).
+                            <!-- Classic (Let's think step-by-step) -->
                             <a v-if="settings.cotMode === 'classic'" href="https://arxiv.org/pdf/2205.11916" target="_blank" class="block mt-1 text-pink-500/80 hover:text-pink-400">
                                 <i class="fa-solid fa-paperclip"></i> Paper: Kojima et al., 2022
                             </a>
-                            <!-- Society of Thought 論文連結 -->
+                            <!-- Society of Thought -->
                             <a v-if="settings.cotMode === 'society'" href="https://arxiv.org/pdf/2601.10825" target="_blank" class="block mt-1 text-pink-500/80 hover:text-pink-400">
                                 <i class="fa-solid fa-paperclip"></i> Paper: Kim et al., 2026
                             </a>
@@ -284,10 +281,10 @@
                 
                 <div class="flex items-center gap-1">
                     <!-- Scroll Buttons -->
-                    <button @click="scrollToTop" :title="t('scrollTop')" class="h-6 w-6 flex items-center justify-center text-slate-500 hover:text-blue-400 hover:bg-slate-800 rounded transition">
+                    <button @click="scrollToTop" title="Scroll to Top" class="h-6 w-6 flex items-center justify-center text-slate-500 hover:text-blue-400 hover:bg-slate-800 rounded transition">
                         <i class="fa-solid fa-arrow-up text-[10px]"></i>
                     </button>
-                    <button @click="scrollToBottom" :title="t('scrollBottom')" class="h-6 w-6 flex items-center justify-center text-slate-500 hover:text-blue-400 hover:bg-slate-800 rounded transition">
+                    <button @click="scrollToBottom" title="Scroll to Bottom" class="h-6 w-6 flex items-center justify-center text-slate-500 hover:text-blue-400 hover:bg-slate-800 rounded transition">
                         <i class="fa-solid fa-arrow-down text-[10px]"></i>
                     </button>
                     
@@ -296,10 +293,10 @@
 
                     <!-- Save Buttons -->
                     <div class="flex bg-slate-800 rounded-lg border border-slate-700 overflow-hidden mr-2">
-                        <button @click="downloadPrompt('txt')" :title="t('saveTxt')" class="px-2 py-1 text-[10px] text-slate-300 hover:text-white hover:bg-slate-700 transition font-bold">
+                        <button @click="downloadPrompt('txt')" title="Save as .txt" class="px-2 py-1 text-[10px] text-slate-300 hover:text-white hover:bg-slate-700 transition font-bold">
                             <i class="fa-solid fa-floppy-disk mr-1"></i> TXT
                         </button>
-                        <button @click="downloadPrompt('md')" :title="t('saveMd')" class="px-2 py-1 text-[10px] text-slate-400 hover:text-white hover:bg-slate-700 border-l border-slate-700 transition font-mono">
+                        <button @click="downloadPrompt('md')" title="Save as .md" class="px-2 py-1 text-[10px] text-slate-400 hover:text-white hover:bg-slate-700 border-l border-slate-700 transition font-mono">
                             MD
                         </button>
                     </div>
@@ -311,20 +308,20 @@
                         :class="copied ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500'"
                     >
                         <i :class="copied ? 'fa-solid fa-check' : 'fa-regular fa-copy'"></i> 
-                        {{ copied ? t('copied') : t('copyAll') }}
+                        {{ copied ? 'COPIED!' : 'COPY' }}
                     </button>
                 </div>
             </div>
             
             <textarea ref="outputTextarea" readonly class="flex-1 w-full bg-[#080c14] text-slate-300 p-5 font-mono text-xs leading-loose outline-none resize-none selection:bg-blue-500/30" v-model="finalPrompt"></textarea>
             
-            <!-- NEW: Footer with Token & Cost Calculator -->
+            <!-- Footer with Token & Cost Calculator -->
             <div class="bg-slate-900 p-2 px-4 border-t border-slate-800 flex justify-between items-center text-[10px]">
                 <div class="flex items-center gap-3">
                     <span class="text-slate-500">
                         <i class="fa-solid fa-coins mr-1 text-yellow-500/50"></i>Est. Input Cost:
                     </span>
-                    <!-- REQUEST 2: UPDATE PRICING MODELS -->
+                    <!-- PRICING MODELS -->
                     <select v-model="costModel" class="bg-slate-800 text-slate-300 border border-slate-700 rounded px-1.5 py-0.5 outline-none hover:border-slate-500 cursor-pointer">
                         <option value="gemini-3-pro">Gemini 3 Pro ($2.00)</option>
                         <option value="gemini-3-flash">Gemini 3 Flash ($0.50)</option>
@@ -348,87 +345,8 @@
 <script>
     const { createApp, ref, computed, onMounted } = Vue;
 
-    // Translations Dictionary
-    const translations = {
-        en: {
-            appSubtitle: 'Structured Prompt Optimizer (Gemini 3 Pro Optimized)',
-            apiKeyPlaceholder: 'SiliconFlow API Key (sk-...)',
-            saveKey: 'Save Key',
-            modelGroupRec: '✨ General Intelligence (Recommended)',
-            modelGroupTrans: '📚 Translation Specialized',
-            modelGroupFree: '🆓 Other Models',
-            repetitionDesc: 'Repeats the <task> block directly. Improves compliance for non-reasoning tasks. (Note: Redundant if CoT is active).',
-            cotDesc: 'Appends strict "Plan-Check-Execute" instruction (Gemini 3 Native).',
-            copyAll: 'COPY',
-            copied: 'COPIED!',
-            saveTxt: 'Save as .txt',
-            saveMd: 'Save as .md',
-            scrollTop: 'Scroll to Top',
-            scrollBottom: 'Scroll to Bottom',
-            ph_role: 'System Persona (e.g., You are Gemini 3, a strict coding architect...)',
-            ph_context: 'Paste documents, data, or previous conversation here...',
-            ph_task: 'The direct instruction (e.g., "Refactor this code")...',
-            ph_code: 'Paste source code here...',
-            ph_constraints: 'Negative constraints (e.g., "No external libraries")...',
-            ph_default: 'Content...',
-            alertKeySaved: 'API Key saved.',
-            alertNoKey: 'Please save your API Key first.',
-            alertTranslateFail: 'API Request failed: '
-        },
-        zh: {
-            appSubtitle: '結構化 Prompt 優化器 (針對 Gemini 3 Pro 優化)',
-            apiKeyPlaceholder: '貼上 SiliconFlow API Key (sk-...)',
-            saveKey: '儲存',
-            modelGroupRec: '✨ 通用智慧 (強力推薦)',
-            modelGroupTrans: '📚 翻譯專用',
-            modelGroupFree: '🆓 其他模型',
-            repetitionDesc: '直接重複 <task> 區塊。提升非推理任務的遵循度 (註：若啟用 CoT 則效果會重疊)。',
-            cotDesc: '加入 "規劃-檢查-執行" 指令 (Gemini 3 原生)。',
-            copyAll: '複製',
-            copied: '已複製！',
-            saveTxt: '儲存為 .txt',
-            saveMd: '儲存為 .md',
-            scrollTop: '捲動至頂部',
-            scrollBottom: '捲動至底部',
-            ph_role: '設定角色 (如：你是一位嚴格的 Gemini 3 架構師...)',
-            ph_context: '貼上背景資料、文件或對話紀錄...',
-            ph_task: '明確的指令 (如："重構這段程式碼")...',
-            ph_code: '貼上原始碼...',
-            ph_constraints: '限制條件 (如："不可使用外部函式庫")...',
-            ph_default: '輸入內容...',
-            alertKeySaved: 'API Key 已儲存。',
-            alertNoKey: '請先輸入並儲存 API Key。',
-            alertTranslateFail: 'API 請求失敗: '
-        },
-        ja: {
-            appSubtitle: '構造化プロンプト最適化 (Gemini 3 Pro 最適化)',
-            apiKeyPlaceholder: 'SiliconFlow API Key (sk-...)',
-            saveKey: '保存',
-            modelGroupRec: '✨ 推奨 (高性能)',
-            modelGroupTrans: '📚 翻訳専用',
-            modelGroupFree: '🆓 その他',
-            repetitionDesc: '<task>ブロックを繰り返します。推論以外のタスクで順守率を向上させます。',
-            cotDesc: '厳密な「計画-チェック-実行」指示を追加します (Gemini 3 Native)。',
-            copyAll: 'コピー',
-            copied: '完了!',
-            saveTxt: '.txt として保存',
-            saveMd: '.md として保存',
-            scrollTop: '最上部へ',
-            scrollBottom: '最下部へ',
-            ph_role: 'AIの役割を定義 (Persona)...',
-            ph_context: '背景情報、データ、ドキュメントを貼り付け...',
-            ph_task: '主なタスクや指示を記述...',
-            ph_code: 'コードスニペットを貼り付け...',
-            ph_constraints: '制約事項 (例: 外部ライブラリ使用禁止)...',
-            ph_default: '内容を入力...',
-            alertKeySaved: 'APIキーを保存しました。',
-            alertNoKey: 'API Keyを入力してください。',
-            alertTranslateFail: 'API リクエスト失敗: '
-        }
-    };
-
     // Preset Data
-    const presetRoles = [
+    const presetRoles =[
         { 
             name: "Gemini 3 Pro - Coding Specialist [DEFAULT]", 
             content: "You are Gemini 3, a Distinguished Software Architect. You are precise, pragmatic, and heavily biased towards efficient, scalable, and modern coding practices.\n\n<instructions>\n1. Plan: Analyze the task and create a step-by-step plan before coding.\n2. Execute: Carry out the plan using modern syntax (e.g., Python 3.12+, ES2024).\n3. Validate: Review your output against the user's requirements.\n4. Format: Return a single, copy-pasteable code block.\n</instructions>"
@@ -437,15 +355,13 @@
             name: "Karpathy's Simulator (Multi-Expert Debate)", 
             content: "You are not an AI assistant. You are a high-fidelity simulator. Your task is to simulate a 'Board of Experts' appropriate for the user's query. Identify the most relevant expert personas (e.g., a skeptical academic, a pragmatic engineer, a visionary futurist) and simulate a rigorous debate or collaborative discussion among them to reach a comprehensive answer. Output the dialogue or the synthesized conclusion of this simulated group."
         },
-        // NEW: 嚴格依照論文 "Reasoning Models Generate Societies of Thought" 實證的 System Role
         {
             name: "Society of Thought (Paper Verified)",
             content: "You are a high-performance reasoning model that solves complex problems by internally generating a 'Society of Thought' — simulating a dynamic discussion among multiple distinct cognitive perspectives with diverse personalities (Big Five traits) and expertise to achieve superior reasoning through debate and synthesis."
         },
-        // NEW: 針對研究助理、文獻回顧與架構解析 (如 MAE, MoE, 音訊處理) 設計的專業 Prompt
         {
             name: "Academic Research Assistant (ML/AI)",
-            content: "You are an elite Postdoctoral Research Assistant specializing in Computer Science, Machine Learning, and AI literature review.\nYour primary role is to help the user discover, analyze, and synthesize academic papers.\n\n<core_principles>\n1. Factual Rigor: NEVER invent or hallucinate paper titles, authors, or metrics. If you are unsure or if the papers are beyond your knowledge cutoff, explicitly state this and provide exact Boolean search queries for arXiv/Google Scholar.\n2. Structured Synthesis: When summarizing papers or architectures (e.g., MAE, MoE), always extract: \n   - [Title & Year]\n   - [Core Methodology / Architecture specifics]\n   - [Key Innovation & SOTA comparisons]\n   - [Limitations]\n3. Technical Depth: Use precise mathematical and architectural terminology. For example, explain specific routing mechanisms in MoE or masking ratios in MAE.\n4. Cross-Referencing: If the user provides text in the <context> block, strictly ground your analysis within that text, mapping out baselines and evolutionary trajectories between the cited works.\n</core_principles>"
+            content: "You are an elite Postdoctoral Research Assistant specializing in Computer Science, Machine Learning, and AI literature review.\nYour primary role is to help the user discover, analyze, and synthesize academic papers.\n\n<core_principles>\n1. Factual Rigor: NEVER invent or hallucinate paper titles, authors, or metrics. If you are unsure or if the papers are beyond your knowledge cutoff, explicitly state this and provide exact Boolean search queries for arXiv/Google Scholar.\n2. Structured Synthesis: When summarizing papers or architectures (e.g., MAE, MoE), always extract: \n   - [Title & Year]\n   -[Core Methodology / Architecture specifics]\n   - [Key Innovation & SOTA comparisons]\n   - [Limitations]\n3. Technical Depth: Use precise mathematical and architectural terminology. For example, explain specific routing mechanisms in MoE or masking ratios in MAE.\n4. Cross-Referencing: If the user provides text in the <context> block, strictly ground your analysis within that text, mapping out baselines and evolutionary trajectories between the cited works.\n</core_principles>"
         },
         {
             name: "Senior Technical Writer",
@@ -453,8 +369,7 @@
         }
     ];
 
-    // REQUEST 1: Ensure these are available for the restored dropdown
-    const presetConstraints = [
+    const presetConstraints =[
         {
             name: "Strict Grounding (Reduce Hallucination) - Official",
             content: "You are a strictly grounded assistant limited to the information provided in the User Context. In your answers, rely **only** on the facts that are directly mentioned in that context. You must **not** access or utilize your own knowledge or common sense to answer. Do not assume or infer from the provided facts; simply report them exactly as they appear. If the exact answer is not explicitly written in the context, you must state that the information is not available."
@@ -469,7 +384,6 @@
         }
     ];
 
-    // REQUEST 2: UPDATED PRICING (Input $ / 1M tokens)
     const MODEL_PRICING = {
         'gemini-3-pro': 2.00,
         'gemini-3-flash': 0.50,
@@ -491,7 +405,6 @@
             // Cost Calculation
             const costModel = ref('gemini-3-pro');
 
-            const currentLang = ref('en');
             const copied = ref(false);
             const outputTextarea = ref(null);
             const focusedBlock = ref(null);
@@ -510,8 +423,6 @@
                 compactWhitespace: true
             });
 
-            const t = (key) => translations[currentLang.value][key] || translations['en'][key];
-
             onMounted(() => {
                 const savedKey = localStorage.getItem('siliconflow_key');
                 if (savedKey) apiKey.value = savedKey;
@@ -519,13 +430,13 @@
 
             // --- Movement Logic ---
             const moveBlockUp = (i) => { if(i>0) [blocks.value[i], blocks.value[i-1]] = [blocks.value[i-1], blocks.value[i]]; };
-            const moveBlockDown = (i) => { if(i<blocks.value.length-1) [blocks.value[i], blocks.value[i+1]] = [blocks.value[i+1], blocks.value[i]]; };
+            const moveBlockDown = (i) => { if(i<blocks.value.length-1)[blocks.value[i], blocks.value[i+1]] = [blocks.value[i+1], blocks.value[i]]; };
             const moveBlockTop = (i) => { if(i>0) blocks.value.unshift(blocks.value.splice(i, 1)[0]); };
             const moveBlockBottom = (i) => { if(i<blocks.value.length-1) blocks.value.push(blocks.value.splice(i, 1)[0]); };
 
             const saveKey = () => {
                 localStorage.setItem('siliconflow_key', apiKey.value);
-                alert(t('alertKeySaved'));
+                alert('API Key saved.');
             };
 
             const getWrapper = (type) => {
@@ -535,15 +446,24 @@
                     'context': ['<context>', '</context>'],
                     'task': ['<task>', '</task>'],
                     'code': ['<code_context>', '</code_context>'], 
-                    'constraints': ['<constraints>', '</constraints>']
+                    'constraints':['<constraints>', '</constraints>']
                 };
                 return map[type] || ['', ''];
             };
 
-            const getPlaceholder = (type) => t('ph_' + type) || t('ph_default');
+            const getPlaceholder = (type) => {
+                const placeholders = {
+                    role: 'System Persona (e.g., You are Gemini 3, a strict coding architect...)',
+                    context: 'Paste documents, data, or previous conversation here...',
+                    task: 'The direct instruction (e.g., "Refactor this code")...',
+                    code: 'Paste source code here...',
+                    constraints: 'Negative constraints (e.g., "No external libraries")...'
+                };
+                return placeholders[type] || 'Content...';
+            };
 
             const finalPrompt = computed(() => {
-                let parts = [];
+                let parts =[];
                 
                 // 1. Process blocks
                 blocks.value.forEach(block => {
@@ -624,6 +544,8 @@ After reaching a consensus in the <think> block, output the final result.`;
 
             const scrollToTop = () => { if (outputTextarea.value) outputTextarea.value.scrollTop = 0; };
             const scrollToBottom = () => { if (outputTextarea.value) outputTextarea.value.scrollTop = outputTextarea.value.scrollHeight; };
+            
+            const scrollToPageTop = () => { window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
             const downloadPrompt = (ext) => {
                 const blob = new Blob([finalPrompt.value], { type: 'text/plain' });
@@ -637,45 +559,35 @@ After reaching a consensus in the <think> block, output the final result.`;
                 URL.revokeObjectURL(url);
             };
 
-            // REQUEST 4: Global click handler to unset focus when clicking outside blocks
             const handleGlobalClick = () => {
                 focusedBlock.value = null;
             };
 
-            // REQUEST 5: Activate block and auto-scroll generated prompt
             const activateBlock = (index, event) => {
                 focusedBlock.value = index;
 
-                // FIX: Check if the click target is a text input area or input box
-                // If it is, we DO NOT move focus to the output textarea.
-                // This allows the user to type/select text without focus being stolen.
                 if (event && (event.target.tagName === 'TEXTAREA' || event.target.tagName === 'INPUT')) {
                     return;
                 }
                 
-                // Calculate approximate offset of this block in the final prompt
-                // by summing length of all preceding blocks
                 let offset = 0;
                 for (let i = 0; i < index; i++) {
                     const b = blocks.value[i];
                     if (!b.content.trim()) continue;
                     const [start, end] = getWrapper(b.type);
-                    // Add content length + wrapper length + newlines
-                    offset += (start.length + b.content.trim().length + end.length + 4); // +4 for newlines approx
+                    offset += (start.length + b.content.trim().length + end.length + 4); 
                 }
 
                 if (outputTextarea.value) {
-                    // Try to scroll to this position
-                    // selectionStart is a reliable way to scroll textareas in most browsers
                     outputTextarea.value.focus();
                     outputTextarea.value.setSelectionRange(offset, offset);
-                    outputTextarea.value.blur(); // Remove focus from output
+                    outputTextarea.value.blur(); 
                 }
             };
 
             // --- API Logic ---
             const callApi = async (messages, model) => {
-                if (!apiKey.value) throw new Error(t('alertNoKey'));
+                if (!apiKey.value) throw new Error('Please save your API Key first.');
                 const response = await fetch('https://api.siliconflow.cn/v1/chat/completions', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${apiKey.value}`, 'Content-Type': 'application/json' },
@@ -698,7 +610,6 @@ After reaching a consensus in the <think> block, output the final result.`;
 
                 block.isProcessing = 'translate';
                 
-                // REQUEST 3: Restore Prompt Repetition
                 const systemPrompt = "You are a professional translator. Output ONLY the translated text. Do not converse.";
                 const userContent = `<role>
 You are a professional translator
@@ -722,7 +633,7 @@ Translate to English. Technical terms must remain accurate. Output ONLY the tran
                     block.history.optimized = result;
                     block.content = result;
                     block.viewMode = 'optimized';
-                } catch (e) { alert(t('alertTranslateFail') + e.message); } 
+                } catch (e) { alert('API Request failed: ' + e.message); } 
                 finally { block.isProcessing = false; }
             };
 
@@ -732,7 +643,6 @@ Translate to English. Technical terms must remain accurate. Output ONLY the tran
 
                 block.isProcessing = 'optimize';
 
-                // REQUEST 3: Restore Prompt Repetition
                 const systemPrompt = "You are an expert prompt engineer. Your goal is to rewrite the user's instructions to be precise, concise, and logical.";
                 const userContent = `<role>You are an expert prompt engineer.</role>
 <task>
@@ -764,7 +674,7 @@ Rules:
                     block.history.optimized = result;
                     block.content = result;
                     block.viewMode = 'optimized';
-                } catch (e) { alert(t('alertTranslateFail') + e.message); }
+                } catch (e) { alert('API Request failed: ' + e.message); }
                 finally { block.isProcessing = false; }
             };
 
@@ -775,7 +685,6 @@ Rules:
                 block.isProcessing = 'role';
 
                 const systemPrompt = "You are an expert system architect.";
-                // REQUEST 3: Restore Prompt Repetition
                 const userContent = `<task>
 Analyze the following user task and create a high-fidelity System Persona (Role) best suited to execute it.
 Rules:
@@ -808,7 +717,7 @@ Rules:
                         viewMode: 'original' 
                     });
 
-                } catch (e) { alert(t('alertTranslateFail') + e.message); }
+                } catch (e) { alert('API Request failed: ' + e.message); }
                 finally { block.isProcessing = false; }
             };
 
@@ -828,10 +737,10 @@ Rules:
             };
 
             return {
-                apiKey, saveKey, blocks, settings, finalPrompt, models, currentLang, copied, outputTextarea, focusedBlock,
+                apiKey, saveKey, blocks, settings, finalPrompt, models, copied, outputTextarea, focusedBlock,
                 addBlock, removeBlock, translateBlock, optimizeBlock, generateRoleFromTask, toggleBlockView,
-                copyPrompt, scrollToTop, scrollToBottom, downloadPrompt,
-                getWrapper, getPlaceholder, t,
+                copyPrompt, scrollToTop, scrollToBottom, downloadPrompt, scrollToPageTop,
+                getWrapper, getPlaceholder,
                 moveBlockUp, moveBlockDown, moveBlockTop, moveBlockBottom,
                 presetRoles, presetConstraints,
                 tokenCount, estimatedCost, costModel, MODEL_PRICING,
