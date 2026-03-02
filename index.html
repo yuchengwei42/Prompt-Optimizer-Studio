@@ -1,4 +1,4 @@
-f<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -36,9 +36,54 @@ f<!DOCTYPE html>
 </head>
 <body>
 
-<!-- Added @click="handleGlobalClick" to handle shrinking when clicking outside blocks -->
 <div id="app" @click="handleGlobalClick" class="min-h-screen p-4 lg:p-8 flex flex-col lg:flex-row gap-8 max-w-[1800px] mx-auto">
     
+    <!-- Floating Action Buttons (Bottom Left - Horizontal layout) -->
+    <div class="fixed bottom-6 left-6 z-50 flex flex-row items-center gap-3" @click.stop>
+        <!-- Add Context -->
+        <div class="relative group/btn flex items-center justify-center">
+            <button @click="addBlock('context')" class="w-10 h-10 rounded-full bg-slate-800/90 hover:bg-slate-700 text-purple-400 border border-slate-700 shadow-lg flex items-center justify-center transition-all hover:scale-110">
+                <i class="fa-solid fa-database"></i>
+            </button>
+            <span class="absolute bottom-12 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 text-xs rounded opacity-0 group-hover/btn:opacity-100 transition pointer-events-none whitespace-nowrap text-slate-300 border border-slate-700 shadow-lg font-medium">Add Context</span>
+        </div>
+        
+        <!-- Add Task -->
+        <div class="relative group/btn flex items-center justify-center">
+            <button @click="addBlock('task')" class="w-10 h-10 rounded-full bg-blue-900/80 hover:bg-blue-800 text-blue-400 border border-blue-800/50 shadow-[0_0_10px_rgba(37,99,235,0.2)] flex items-center justify-center transition-all hover:scale-110">
+                <i class="fa-solid fa-bullseye"></i>
+            </button>
+            <span class="absolute bottom-12 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 text-xs rounded opacity-0 group-hover/btn:opacity-100 transition pointer-events-none whitespace-nowrap text-slate-300 border border-slate-700 shadow-lg font-medium">Add Task</span>
+        </div>
+
+        <!-- Add Code -->
+        <div class="relative group/btn flex items-center justify-center">
+            <button @click="addBlock('code')" class="w-10 h-10 rounded-full bg-slate-800/90 hover:bg-slate-700 text-emerald-500 border border-slate-700 shadow-lg flex items-center justify-center transition-all hover:scale-110">
+                <i class="fa-solid fa-code"></i>
+            </button>
+            <span class="absolute bottom-12 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 text-xs rounded opacity-0 group-hover/btn:opacity-100 transition pointer-events-none whitespace-nowrap text-slate-300 border border-slate-700 shadow-lg font-medium">Add Code</span>
+        </div>
+
+        <!-- Add Rules -->
+        <div class="relative group/btn flex items-center justify-center">
+            <button @click="addBlock('constraints')" class="w-10 h-10 rounded-full bg-slate-800/90 hover:bg-slate-700 text-red-400 border border-slate-700 shadow-lg flex items-center justify-center transition-all hover:scale-110">
+                <i class="fa-solid fa-shield-halved"></i>
+            </button>
+            <span class="absolute bottom-12 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 text-xs rounded opacity-0 group-hover/btn:opacity-100 transition pointer-events-none whitespace-nowrap text-slate-300 border border-slate-700 shadow-lg font-medium">Add Rules</span>
+        </div>
+
+        <!-- Vertical Divider -->
+        <div class="w-px h-5 bg-slate-700/60 mx-1"></div>
+
+        <!-- Scroll Top/Bottom -->
+        <div class="relative group/btn flex items-center justify-center">
+            <button @click="toggleScroll" class="w-10 h-10 rounded-full bg-slate-900/90 hover:bg-slate-800 text-slate-400 border border-slate-700 shadow-lg flex items-center justify-center transition-all hover:scale-110">
+                <i class="fa-solid" :class="isScrolledDown ? 'fa-arrow-up' : 'fa-arrow-down'"></i>
+            </button>
+            <span class="absolute bottom-12 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 text-xs rounded opacity-0 group-hover/btn:opacity-100 transition pointer-events-none whitespace-nowrap text-slate-300 border border-slate-700 shadow-lg font-medium">{{ isScrolledDown ? 'Scroll to Top' : 'Scroll to Bottom' }}</span>
+        </div>
+    </div>
+
     <!-- Left Column: Construction Area -->
     <div class="w-full lg:w-3/5 flex flex-col gap-5">
         <header class="mb-2 flex justify-between items-end">
@@ -83,26 +128,6 @@ f<!DOCTYPE html>
             </div>
         </div>
 
-        <!-- Top Toolbar: Add Blocks & Navigation -->
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-2" @click.stop>
-            <button @click="addBlock('context')" class="h-10 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-lg text-xs font-bold border border-slate-700 transition flex items-center justify-center gap-2 group">
-                <i class="fa-solid fa-database text-purple-500 group-hover:scale-110 transition"></i> CONTEXT
-            </button>
-            <button @click="addBlock('task')" class="h-10 bg-blue-900/20 hover:bg-blue-900/40 text-blue-400 hover:text-blue-300 rounded-lg text-xs font-bold border border-blue-800/50 transition flex items-center justify-center gap-2 group shadow-[0_0_10px_rgba(37,99,235,0.1)]">
-                <i class="fa-solid fa-bullseye group-hover:scale-110 transition"></i> TASK
-            </button>
-            <button @click="addBlock('code')" class="h-10 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-lg text-xs font-bold border border-slate-700 transition flex items-center justify-center gap-2 group">
-                <i class="fa-solid fa-code text-emerald-500 group-hover:scale-110 transition"></i> CODE
-            </button>
-            <button @click="addBlock('constraints')" class="h-10 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-lg text-xs font-bold border border-slate-700 transition flex items-center justify-center gap-2 group">
-                <i class="fa-solid fa-shield-halved text-red-400 group-hover:scale-110 transition"></i> RULES
-            </button>
-            <!-- Scroll Down Button -->
-            <button @click="scrollToPageBottom" class="h-10 bg-slate-900 hover:bg-slate-800 text-slate-500 hover:text-blue-400 rounded-lg text-xs font-bold border border-slate-800 transition flex items-center justify-center gap-2 group">
-                <i class="fa-solid fa-arrow-down group-hover:translate-y-0.5 transition-transform"></i> BOTTOM
-            </button>
-        </div>
-
         <!-- Block List -->
         <div class="flex flex-col gap-4">
             <div 
@@ -141,7 +166,7 @@ f<!DOCTYPE html>
 
                     <!-- Preset Dropdown (Dynamic) -->
                     <div v-if="block.type === 'role'" class="flex-1 min-w-[150px]">
-                        <select @change="(e) => block.content = e.target.value" @click.stop class="w-full bg-slate-800 text-slate-400 text-[10px] py-1 px-2 rounded border border-slate-700/50 outline-none hover:border-emerald-500/50 transition cursor-pointer">
+                        <select @change="loadRolePreset(block, $event)" @click.stop class="w-full bg-slate-800 text-slate-400 text-[10px] py-1 px-2 rounded border border-slate-700/50 outline-none hover:border-emerald-500/50 transition cursor-pointer">
                             <option value="" disabled selected>✨ Load Preset...</option>
                             <option v-for="(preset, pIndex) in presetRoles" :key="pIndex" :value="preset.content">{{ preset.name }}</option>
                         </select>
@@ -202,27 +227,6 @@ f<!DOCTYPE html>
                     {{ getWrapper(block.type)[0] }} ... {{ getWrapper(block.type)[1] }}
                 </div>
             </div>
-        </div>
-
-
-        <!-- Bottom Toolbar: Add Blocks & Navigation -->
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-2 mt-2" @click.stop>
-            <button @click="addBlock('context')" class="h-10 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-lg text-xs font-bold border border-slate-700 transition flex items-center justify-center gap-2 group">
-                <i class="fa-solid fa-database text-purple-500 group-hover:scale-110 transition"></i> CONTEXT
-            </button>
-            <button @click="addBlock('task')" class="h-10 bg-blue-900/20 hover:bg-blue-900/40 text-blue-400 hover:text-blue-300 rounded-lg text-xs font-bold border border-blue-800/50 transition flex items-center justify-center gap-2 group shadow-[0_0_10px_rgba(37,99,235,0.1)]">
-                <i class="fa-solid fa-bullseye group-hover:scale-110 transition"></i> TASK
-            </button>
-            <button @click="addBlock('code')" class="h-10 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-lg text-xs font-bold border border-slate-700 transition flex items-center justify-center gap-2 group">
-                <i class="fa-solid fa-code text-emerald-500 group-hover:scale-110 transition"></i> CODE
-            </button>
-            <button @click="addBlock('constraints')" class="h-10 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-lg text-xs font-bold border border-slate-700 transition flex items-center justify-center gap-2 group">
-                <i class="fa-solid fa-shield-halved text-red-400 group-hover:scale-110 transition"></i> RULES
-            </button>
-            <!-- Scroll Up Button -->
-            <button @click="scrollToPageTop" class="h-10 bg-slate-900 hover:bg-slate-800 text-slate-500 hover:text-blue-400 rounded-lg text-xs font-bold border border-slate-800 transition flex items-center justify-center gap-2 group">
-                <i class="fa-solid fa-arrow-up group-hover:-translate-y-0.5 transition-transform"></i> TOP
-            </button>
         </div>
     </div>
 
@@ -361,12 +365,12 @@ f<!DOCTYPE html>
 </div>
 
 <script>
-    const { createApp, ref, computed, onMounted } = Vue;
+    const { createApp, ref, computed, onMounted, onUnmounted } = Vue;
 
     // Preset Data
     const presetRoles =[
         { 
-            name: "Gemini 3 Pro - Coding Specialist [DEFAULT]", 
+            name: "Gemini 3 Pro - Coding Specialist[DEFAULT]", 
             content: "You are Gemini 3, a Distinguished Software Architect. You are precise, pragmatic, and heavily biased towards efficient, scalable, and modern coding practices.\n\n<instructions>\n1. Plan: Analyze the task and create a step-by-step plan before coding.\n2. Execute: Carry out the plan using modern syntax (e.g., Python 3.12+, ES2024).\n3. Validate: Review your output against the user's requirements.\n4. Format: Return a single, copy-pasteable code block.\n</instructions>"
         },
         { 
@@ -426,6 +430,7 @@ f<!DOCTYPE html>
             const copied = ref(false);
             const outputTextarea = ref(null);
             const focusedBlock = ref(null);
+            const isScrolledDown = ref(false);
             
             // Block Structure
             const blocks = ref([
@@ -441,14 +446,24 @@ f<!DOCTYPE html>
                 compactWhitespace: true
             });
 
+            // Handle Scroll Status
+            const handleScrollEvent = () => {
+                isScrolledDown.value = window.scrollY > 150;
+            };
+
             onMounted(() => {
                 const savedKey = localStorage.getItem('siliconflow_key');
                 if (savedKey) apiKey.value = savedKey;
+                window.addEventListener('scroll', handleScrollEvent);
+            });
+
+            onUnmounted(() => {
+                window.removeEventListener('scroll', handleScrollEvent);
             });
 
             // --- Movement Logic ---
-            const moveBlockUp = (i) => { if(i>0) [blocks.value[i], blocks.value[i-1]] = [blocks.value[i-1], blocks.value[i]]; };
-            const moveBlockDown = (i) => { if(i<blocks.value.length-1)[blocks.value[i], blocks.value[i+1]] = [blocks.value[i+1], blocks.value[i]]; };
+            const moveBlockUp = (i) => { if(i>0)[blocks.value[i], blocks.value[i-1]] = [blocks.value[i-1], blocks.value[i]]; };
+            const moveBlockDown = (i) => { if(i<blocks.value.length-1)[blocks.value[i], blocks.value[i+1]] =[blocks.value[i+1], blocks.value[i]]; };
             const moveBlockTop = (i) => { if(i>0) blocks.value.unshift(blocks.value.splice(i, 1)[0]); };
             const moveBlockBottom = (i) => { if(i<blocks.value.length-1) blocks.value.push(blocks.value.splice(i, 1)[0]); };
 
@@ -460,10 +475,10 @@ f<!DOCTYPE html>
             const getWrapper = (type) => {
                 const map = {
                     'text': ['', ''],
-                    'role': ['<system_role>', '</system_role>'],
+                    'role':['<system_role>', '</system_role>'],
                     'context': ['<context>', '</context>'],
-                    'task': ['<task>', '</task>'],
-                    'code': ['<code_context>', '</code_context>'], 
+                    'task':['<task>', '</task>'],
+                    'code':['<code_context>', '</code_context>'], 
                     'constraints':['<constraints>', '</constraints>']
                 };
                 return map[type] || ['', ''];
@@ -478,6 +493,18 @@ f<!DOCTYPE html>
                     constraints: 'Negative constraints (e.g., "No external libraries")...'
                 };
                 return placeholders[type] || 'Content...';
+            };
+
+            const loadRolePreset = (block, event) => {
+                const val = event.target.value;
+                block.content = val;
+                
+                // Auto-link "Society of Thought" to corresponding CoT
+                const societyPreset = presetRoles.find(p => p.name.includes("Society of Thought"));
+                if (societyPreset && val === societyPreset.content) {
+                    settings.value.addCoT = true;
+                    settings.value.cotMode = 'society';
+                }
             };
 
             const finalPrompt = computed(() => {
@@ -566,6 +593,11 @@ After reaching a consensus in the <think> block, output the final result.`;
             const scrollToPageTop = () => { window.scrollTo({ top: 0, behavior: 'smooth' }); };
             const scrollToPageBottom = () => { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); };
 
+            const toggleScroll = () => {
+                if (isScrolledDown.value) scrollToPageTop();
+                else scrollToPageBottom();
+            };
+
             const downloadPrompt = (ext) => {
                 const blob = new Blob([finalPrompt.value], { type: 'text/plain' });
                 const url = URL.createObjectURL(blob);
@@ -593,7 +625,7 @@ After reaching a consensus in the <think> block, output the final result.`;
                 for (let i = 0; i < index; i++) {
                     const b = blocks.value[i];
                     if (!b.content.trim()) continue;
-                    const [start, end] = getWrapper(b.type);
+                    const[start, end] = getWrapper(b.type);
                     offset += (start.length + b.content.trim().length + end.length + 4); 
                 }
 
@@ -758,8 +790,8 @@ Rules:
             return {
                 apiKey, saveKey, blocks, settings, finalPrompt, models, copied, outputTextarea, focusedBlock,
                 addBlock, removeBlock, translateBlock, optimizeBlock, generateRoleFromTask, toggleBlockView,
-                copyPrompt, scrollToTop, scrollToBottom, downloadPrompt, scrollToPageTop, scrollToPageBottom,
-                getWrapper, getPlaceholder,
+                copyPrompt, scrollToTop, scrollToBottom, downloadPrompt, toggleScroll, isScrolledDown,
+                getWrapper, getPlaceholder, loadRolePreset,
                 moveBlockUp, moveBlockDown, moveBlockTop, moveBlockBottom,
                 presetRoles, presetConstraints,
                 tokenCount, estimatedCost, costModel, MODEL_PRICING,
