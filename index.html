@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+f<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -83,19 +83,23 @@
             </div>
         </div>
 
-        <!-- Add Buttons (Moved to the top) -->
-        <div class="grid grid-cols-4 gap-3" @click.stop>
-            <button @click="addBlock('context')" class="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 py-3 rounded-xl text-xs font-bold border border-slate-700 transition flex flex-col items-center gap-1 group">
-                <i class="fa-solid fa-database text-lg text-purple-500 group-hover:scale-110 transition"></i> CONTEXT
+        <!-- Top Toolbar: Add Blocks & Navigation -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-2" @click.stop>
+            <button @click="addBlock('context')" class="h-10 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-lg text-xs font-bold border border-slate-700 transition flex items-center justify-center gap-2 group">
+                <i class="fa-solid fa-database text-purple-500 group-hover:scale-110 transition"></i> CONTEXT
             </button>
-            <button @click="addBlock('task')" class="bg-blue-900/20 hover:bg-blue-900/40 text-blue-400 hover:text-blue-300 py-3 rounded-xl text-xs font-bold border border-blue-800/50 transition flex flex-col items-center gap-1 group shadow-[0_0_15px_rgba(37,99,235,0.1)]">
-                <i class="fa-solid fa-bullseye text-lg group-hover:scale-110 transition"></i> TASK
+            <button @click="addBlock('task')" class="h-10 bg-blue-900/20 hover:bg-blue-900/40 text-blue-400 hover:text-blue-300 rounded-lg text-xs font-bold border border-blue-800/50 transition flex items-center justify-center gap-2 group shadow-[0_0_10px_rgba(37,99,235,0.1)]">
+                <i class="fa-solid fa-bullseye group-hover:scale-110 transition"></i> TASK
             </button>
-            <button @click="addBlock('code')" class="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 py-3 rounded-xl text-xs font-bold border border-slate-700 transition flex flex-col items-center gap-1 group">
-                <i class="fa-solid fa-code text-lg text-emerald-500 group-hover:scale-110 transition"></i> CODE
+            <button @click="addBlock('code')" class="h-10 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-lg text-xs font-bold border border-slate-700 transition flex items-center justify-center gap-2 group">
+                <i class="fa-solid fa-code text-emerald-500 group-hover:scale-110 transition"></i> CODE
             </button>
-             <button @click="addBlock('constraints')" class="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 py-3 rounded-xl text-xs font-bold border border-slate-700 transition flex flex-col items-center gap-1 group">
-                <i class="fa-solid fa-shield-halved text-lg text-red-400 group-hover:scale-110 transition"></i> RULES
+            <button @click="addBlock('constraints')" class="h-10 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-lg text-xs font-bold border border-slate-700 transition flex items-center justify-center gap-2 group">
+                <i class="fa-solid fa-shield-halved text-red-400 group-hover:scale-110 transition"></i> RULES
+            </button>
+            <!-- Scroll Down Button -->
+            <button @click="scrollToPageBottom" class="h-10 bg-slate-900 hover:bg-slate-800 text-slate-500 hover:text-blue-400 rounded-lg text-xs font-bold border border-slate-800 transition flex items-center justify-center gap-2 group">
+                <i class="fa-solid fa-arrow-down group-hover:translate-y-0.5 transition-transform"></i> BOTTOM
             </button>
         </div>
 
@@ -200,10 +204,24 @@
             </div>
         </div>
 
-        <!-- Back to Top Button -->
-        <div class="mt-2" @click.stop>
-            <button @click="scrollToPageTop" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 py-3 rounded-xl text-xs font-bold border border-slate-700 transition flex items-center justify-center gap-2 group shadow-sm">
-                <i class="fa-solid fa-arrow-up group-hover:-translate-y-1 transition-transform"></i> BACK TO TOP
+
+        <!-- Bottom Toolbar: Add Blocks & Navigation -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-2 mt-2" @click.stop>
+            <button @click="addBlock('context')" class="h-10 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-lg text-xs font-bold border border-slate-700 transition flex items-center justify-center gap-2 group">
+                <i class="fa-solid fa-database text-purple-500 group-hover:scale-110 transition"></i> CONTEXT
+            </button>
+            <button @click="addBlock('task')" class="h-10 bg-blue-900/20 hover:bg-blue-900/40 text-blue-400 hover:text-blue-300 rounded-lg text-xs font-bold border border-blue-800/50 transition flex items-center justify-center gap-2 group shadow-[0_0_10px_rgba(37,99,235,0.1)]">
+                <i class="fa-solid fa-bullseye group-hover:scale-110 transition"></i> TASK
+            </button>
+            <button @click="addBlock('code')" class="h-10 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-lg text-xs font-bold border border-slate-700 transition flex items-center justify-center gap-2 group">
+                <i class="fa-solid fa-code text-emerald-500 group-hover:scale-110 transition"></i> CODE
+            </button>
+            <button @click="addBlock('constraints')" class="h-10 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-lg text-xs font-bold border border-slate-700 transition flex items-center justify-center gap-2 group">
+                <i class="fa-solid fa-shield-halved text-red-400 group-hover:scale-110 transition"></i> RULES
+            </button>
+            <!-- Scroll Up Button -->
+            <button @click="scrollToPageTop" class="h-10 bg-slate-900 hover:bg-slate-800 text-slate-500 hover:text-blue-400 rounded-lg text-xs font-bold border border-slate-800 transition flex items-center justify-center gap-2 group">
+                <i class="fa-solid fa-arrow-up group-hover:-translate-y-0.5 transition-transform"></i> TOP
             </button>
         </div>
     </div>
@@ -546,6 +564,7 @@ After reaching a consensus in the <think> block, output the final result.`;
             const scrollToBottom = () => { if (outputTextarea.value) outputTextarea.value.scrollTop = outputTextarea.value.scrollHeight; };
             
             const scrollToPageTop = () => { window.scrollTo({ top: 0, behavior: 'smooth' }); };
+            const scrollToPageBottom = () => { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); };
 
             const downloadPrompt = (ext) => {
                 const blob = new Blob([finalPrompt.value], { type: 'text/plain' });
@@ -739,7 +758,7 @@ Rules:
             return {
                 apiKey, saveKey, blocks, settings, finalPrompt, models, copied, outputTextarea, focusedBlock,
                 addBlock, removeBlock, translateBlock, optimizeBlock, generateRoleFromTask, toggleBlockView,
-                copyPrompt, scrollToTop, scrollToBottom, downloadPrompt, scrollToPageTop,
+                copyPrompt, scrollToTop, scrollToBottom, downloadPrompt, scrollToPageTop, scrollToPageBottom,
                 getWrapper, getPlaceholder,
                 moveBlockUp, moveBlockDown, moveBlockTop, moveBlockBottom,
                 presetRoles, presetConstraints,
