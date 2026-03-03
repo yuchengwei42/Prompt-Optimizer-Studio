@@ -26,10 +26,6 @@
         
         a { color: #a1a1aa; text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s;}
         a:hover { border-color: #a1a1aa; }
-        
-        /* Transitions */
-        .fade-enter-active, .fade-leave-active { transition: opacity 0.3s, transform 0.3s; }
-        .fade-enter-from, .fade-leave-to { opacity: 0; transform: translateX(-10px); }
 
         /* Mode Tinting - Grayscale Edition */
         .mode-optimized textarea { background-color: rgba(39, 39, 42, 0.4) !important; border-color: rgba(82, 82, 91, 0.5); }
@@ -69,17 +65,22 @@
     <!-- Main Workspace Area -->
     <div class="flex-1 flex overflow-hidden mb-14"> <!-- mb-14 to clear bottom taskbar -->
         
-        <!-- Left Column: Settings & Strategy Sidebar -->
-        <transition name="fade">
-            <aside v-show="showSidebar" class="w-80 flex-shrink-0 bg-[#121214] border-r border-zinc-800 flex flex-col overflow-y-auto z-10" @click.stop>
+        <!-- Left Column: Settings & Strategy Sidebar (Smooth Width Transition) -->
+        <aside 
+            :class="showSidebar ? 'w-72' : 'w-0 border-r-0'" 
+            class="flex-shrink-0 bg-[#121214] border-r border-zinc-800 transition-[width,border] duration-300 ease-in-out z-10 overflow-hidden" 
+            @click.stop
+        >
+            <!-- Inner fixed-width wrapper prevents layout breakage during slide -->
+            <div class="w-72 flex flex-col h-full overflow-y-auto">
                 <!-- Title Header -->
-                <div class="p-5 border-b border-zinc-800 sticky top-0 bg-[#121214]/95 backdrop-blur z-20">
+                <div class="p-5 border-b border-zinc-800 sticky top-0 bg-[#121214]/95 backdrop-blur z-20 shrink-0">
                     <h1 class="text-xl font-extrabold text-zinc-200 tracking-tight flex items-center gap-2">
-                        <i class="fa-solid fa-layer-group text-zinc-400"></i>Prompt Optimizer Studio
+                        <i class="fa-solid fa-layer-group text-zinc-400"></i>Prompt Optimizer
                     </h1>
                 </div>
 
-                <div class="p-5 flex flex-col gap-6">
+                <div class="p-5 flex flex-col gap-6 shrink-0">
                     <!-- API & Models -->
                     <div class="flex flex-col gap-4">
                         <h2 class="text-xs font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-2">
@@ -89,7 +90,6 @@
                         <!-- API Key -->
                         <div class="flex items-center gap-2">
                             <div class="bg-zinc-800 p-2 rounded text-zinc-400 text-sm shrink-0"><i class="fa-solid fa-key"></i></div>
-                            <!-- Added min-w-0 to prevent flex expansion pushing beyond container -->
                             <input v-model="apiKey" type="password" placeholder="SiliconFlow API Key..." class="glass-input flex-1 min-w-0 outline-none text-sm text-zinc-200 placeholder-zinc-600 px-3 py-2 rounded-lg focus:border-zinc-400 transition">
                             <button @click="saveKey" class="text-xs bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 px-3 py-2 rounded-lg font-bold text-zinc-300 transition shrink-0">Save</button>
                         </div>
@@ -198,157 +198,174 @@
                         </div>
                     </div>
                 </div>
-            </aside>
-        </transition>
+            </div>
+        </aside>
 
-        <!-- Middle Column: Block Construction Area (Scrollable) -->
-        <main class="flex-1 flex flex-col min-w-[300px] relative bg-[#09090b]">
-            <!-- Header area with Playground Toggle -->
-            <div class="p-4 flex items-center justify-between border-b border-zinc-800/50 bg-[#09090b] z-10 sticky top-0">
-                <button @click="showSidebar = !showSidebar" class="flex items-center gap-2 text-zinc-400 hover:text-zinc-200 transition font-bold text-sm px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 rounded-lg border border-zinc-800">
+        <!-- Middle Column: Block Construction Area -->
+        <main class="flex-1 flex flex-col min-w-0 relative bg-[#09090b]">
+            <!-- Header area with Toggles -->
+            <div class="px-4 py-3 flex items-center justify-between border-b border-zinc-800/50 bg-[#09090b] z-10 sticky top-0">
+                <button @click.stop="showSidebar = !showSidebar" class="flex items-center gap-2 text-zinc-400 hover:text-zinc-200 transition font-bold text-sm px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 rounded-lg border border-zinc-800 shadow-sm">
                     <i class="fa-solid" :class="showSidebar ? 'fa-bars-staggered' : 'fa-bars'"></i> Playground
+                </button>
+                
+                <button @click.stop="showRightSidebar = !showRightSidebar" class="flex items-center gap-2 text-zinc-400 hover:text-zinc-200 transition font-bold text-sm px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 rounded-lg border border-zinc-800 shadow-sm">
+                    <span class="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-pulse mr-1"></span> 
+                    GENERATED PROMPT 
+                    <i class="fa-solid ml-1" :class="showRightSidebar ? 'fa-chevron-right' : 'fa-chevron-left'"></i>
                 </button>
             </div>
 
-            <!-- Blocks Scrollable Container -->
-            <div ref="middleContainer" @scroll="handleMiddleScroll" class="flex-1 overflow-y-auto p-4 lg:p-6 flex flex-col gap-5 scroll-smooth">
-                <div 
-                    v-for="(block, index) in blocks" 
-                    :key="index" 
-                    @click.stop="activateBlock(index, $event)"
-                    class="glass rounded-xl p-1 relative group transition-all duration-300 hover:border-zinc-500/50 hover:shadow-lg hover:shadow-black/50"
-                    :class="{ 'mode-optimized': block.viewMode === 'optimized', 'ring-1 ring-zinc-400/50 bg-zinc-800/30': focusedBlock === index }"
-                >
-                    <!-- Badge for Optimized/Translated Mode -->
-                    <div v-if="block.viewMode === 'optimized'" class="absolute top-0 right-0 bg-zinc-200 text-zinc-900 text-[10px] font-bold px-3 py-1 rounded-bl-lg rounded-tr-xl pointer-events-none z-10 shadow-sm border-l border-b border-zinc-400">
-                        <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>PROCESSED
-                    </div>
+            <!-- Blocks Scrollable Container (Clicks here will un-focus the active block) -->
+            <div ref="middleContainer" @scroll="handleMiddleScroll" class="flex-1 overflow-y-auto w-full scroll-smooth" @click="focusedBlock = null">
+                <!-- Inner Wrapper: limits max width and leaves blank scrolling space on sides -->
+                <div class="max-w-4xl mx-auto w-full flex flex-col gap-6 px-6 py-6 lg:px-12 lg:py-8 min-h-full">
+                    
+                    <div 
+                        v-for="(block, index) in blocks" 
+                        :key="index" 
+                        @click.stop="activateBlock(index, $event)"
+                        class="glass rounded-xl p-1 relative group transition-all duration-300 hover:border-zinc-500/50 hover:shadow-lg hover:shadow-black/50"
+                        :class="{ 'mode-optimized': block.viewMode === 'optimized', 'ring-1 ring-zinc-400/50 bg-zinc-800/30': focusedBlock === index }"
+                    >
+                        <!-- Badge for Optimized/Translated Mode -->
+                        <div v-if="block.viewMode === 'optimized'" class="absolute top-0 right-0 bg-zinc-200 text-zinc-900 text-[10px] font-bold px-3 py-1 rounded-bl-lg rounded-tr-xl pointer-events-none z-10 shadow-sm border-l border-b border-zinc-400">
+                            <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>PROCESSED
+                        </div>
 
-                    <!-- Toolbar -->
-                    <div class="flex flex-wrap justify-between items-center bg-zinc-900/60 p-2.5 rounded-t-lg border-b border-zinc-800/80 gap-3">
-                        <div class="flex items-center gap-3">
-                            <!-- Movement Controls -->
-                            <div class="flex items-center bg-zinc-950 rounded-lg border border-zinc-800 overflow-hidden">
-                                <button @click.stop="moveBlockTop(index)" :disabled="index === 0" title="Move to Top" class="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 disabled:opacity-20 transition border-r border-zinc-800"><i class="fa-solid fa-angles-up text-[10px]"></i></button>
-                                <button @click.stop="moveBlockUp(index)" :disabled="index === 0" title="Move Up" class="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 disabled:opacity-20 transition border-r border-zinc-800"><i class="fa-solid fa-angle-up text-xs"></i></button>
-                                <button @click.stop="moveBlockDown(index)" :disabled="index === blocks.length - 1" title="Move Down" class="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 disabled:opacity-20 transition border-r border-zinc-800"><i class="fa-solid fa-angle-down text-xs"></i></button>
-                                <button @click.stop="moveBlockBottom(index)" :disabled="index === blocks.length - 1" title="Move to Bottom" class="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 disabled:opacity-20 transition"><i class="fa-solid fa-angles-down text-[10px]"></i></button>
+                        <!-- Toolbar -->
+                        <div class="flex flex-wrap justify-between items-center bg-zinc-900/60 p-2.5 rounded-t-lg border-b border-zinc-800/80 gap-3">
+                            <div class="flex items-center gap-3">
+                                <!-- Movement Controls -->
+                                <div class="flex items-center bg-zinc-950 rounded-lg border border-zinc-800 overflow-hidden">
+                                    <button @click.stop="moveBlockTop(index)" :disabled="index === 0" title="Move to Top" class="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 disabled:opacity-20 transition border-r border-zinc-800"><i class="fa-solid fa-angles-up text-[10px]"></i></button>
+                                    <button @click.stop="moveBlockUp(index)" :disabled="index === 0" title="Move Up" class="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 disabled:opacity-20 transition border-r border-zinc-800"><i class="fa-solid fa-angle-up text-xs"></i></button>
+                                    <button @click.stop="moveBlockDown(index)" :disabled="index === blocks.length - 1" title="Move Down" class="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 disabled:opacity-20 transition border-r border-zinc-800"><i class="fa-solid fa-angle-down text-xs"></i></button>
+                                    <button @click.stop="moveBlockBottom(index)" :disabled="index === blocks.length - 1" title="Move to Bottom" class="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 disabled:opacity-20 transition"><i class="fa-solid fa-angles-down text-[10px]"></i></button>
+                                </div>
+
+                                <!-- Type Selector matched to CoT -->
+                                <select v-model="block.type" @click.stop class="bg-zinc-950 text-zinc-300 text-xs py-1.5 px-2 rounded-lg border border-zinc-700 uppercase font-bold tracking-wide outline-none hover:border-zinc-500 hover:text-zinc-200 transition cursor-pointer">
+                                    <option value="role">Role (Persona)</option>
+                                    <option value="context">Context (Data)</option>
+                                    <option value="task">Task (Instruction)</option>
+                                    <option value="code">Code Snippet</option>
+                                    <option value="constraints">Constraints</option>
+                                    <option value="text">Plain Text</option>
+                                </select>
                             </div>
 
-                            <!-- Type Selector matched to CoT -->
-                            <select v-model="block.type" @click.stop class="bg-zinc-950 text-zinc-300 text-xs py-1.5 px-2 rounded-lg border border-zinc-700 uppercase font-bold tracking-wide outline-none hover:border-zinc-500 hover:text-zinc-200 transition cursor-pointer">
-                                <option value="role">Role (Persona)</option>
-                                <option value="context">Context (Data)</option>
-                                <option value="task">Task (Instruction)</option>
-                                <option value="code">Code Snippet</option>
-                                <option value="constraints">Constraints</option>
-                                <option value="text">Plain Text</option>
-                            </select>
+                            <!-- Preset Dropdown (Dynamic) matched to CoT -->
+                            <div v-if="block.type === 'role'" class="flex-1 min-w-[200px]">
+                                <select @change="loadRolePreset(block, $event)" @click.stop class="w-full bg-zinc-950 text-zinc-300 text-xs py-1.5 px-3 rounded-lg border border-zinc-700 outline-none hover:border-zinc-500 transition cursor-pointer">
+                                    <option value="" disabled selected>✨ Load Preset...</option>
+                                    <option v-for="(preset, pIndex) in presetRoles" :key="pIndex" :value="preset.content">{{ preset.name }}</option>
+                                </select>
+                            </div>
+
+                            <!-- RESTORE CONSTRAINTS DROPDOWN matched to CoT -->
+                            <div v-if="block.type === 'constraints'" class="flex-1 min-w-[200px]">
+                                <select @change="(e) => block.content = e.target.value" @click.stop class="w-full bg-zinc-950 text-zinc-300 text-xs py-1.5 px-3 rounded-lg border border-zinc-700 outline-none hover:border-zinc-500 transition cursor-pointer">
+                                    <option value="" disabled selected>🛡️ Load Guardrail...</option>
+                                    <option v-for="(preset, pIndex) in presetConstraints" :key="pIndex" :value="preset.content">{{ preset.name }}</option>
+                                </select>
+                            </div>
+                            
+                            <div class="flex gap-2 items-center">
+                                <!-- Generate Role -->
+                                <button v-if="block.type === 'task'" @click.stop="generateRoleFromTask(index)" :disabled="block.isProcessing" title="Generate Persona from this Task" class="h-8 px-3 text-xs bg-zinc-800 text-zinc-300 border border-zinc-700 rounded-lg hover:bg-zinc-700 transition flex items-center gap-2">
+                                    <i v-if="block.isProcessing === 'role'" class="fa-solid fa-circle-notch fa-spin"></i>
+                                    <span v-else><i class="fa-solid fa-user-astronaut"></i> ROLE</span>
+                                </button>
+
+                                <!-- Optimize Prompt -->
+                                <button v-if="['task', 'context'].includes(block.type)" @click.stop="optimizeBlock(index)" :disabled="block.isProcessing" title="Optimize Clarity & Structure" class="h-8 px-3 text-xs bg-zinc-800 text-zinc-300 border border-zinc-700 rounded-lg hover:bg-zinc-700 transition flex items-center gap-2">
+                                    <i v-if="block.isProcessing === 'optimize'" class="fa-solid fa-circle-notch fa-spin"></i>
+                                    <span v-else><i class="fa-solid fa-wand-magic-sparkles"></i> AI</span>
+                                </button>
+
+                                <!-- Translate Btn -->
+                                <button @click.stop="translateBlock(index)" :disabled="block.isProcessing" title="Translate to English" class="h-8 px-3 text-xs bg-zinc-800 text-zinc-300 border border-zinc-700 rounded-lg hover:bg-zinc-700 transition flex items-center gap-2">
+                                    <i v-if="block.isProcessing === 'translate'" class="fa-solid fa-circle-notch fa-spin"></i>
+                                    <span v-else><i class="fa-solid fa-language"></i> EN</span>
+                                </button>
+
+                                <!-- View Toggle -->
+                                <div v-if="block.history.optimized" class="flex bg-zinc-950 rounded-lg border border-zinc-700 overflow-hidden h-8">
+                                    <button @click.stop="toggleBlockView(index, 'original')" :class="block.viewMode === 'original' ? 'bg-zinc-600 text-zinc-200' : 'text-zinc-500 hover:text-zinc-300'" class="px-3 text-xs transition font-bold" title="Show Original">A</button>
+                                    <button @click.stop="toggleBlockView(index, 'optimized')" :class="block.viewMode === 'optimized' ? 'bg-zinc-200 text-zinc-900' : 'text-zinc-500 hover:text-zinc-300'" class="px-3 text-xs transition font-bold" title="Show Processed">B</button>
+                                </div>
+
+                                <!-- Delete Btn -->
+                                <button @click.stop="removeBlock(index)" class="h-8 w-8 flex items-center justify-center text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 rounded-lg transition ml-1">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
                         </div>
 
-                        <!-- Preset Dropdown (Dynamic) matched to CoT -->
-                        <div v-if="block.type === 'role'" class="flex-1 min-w-[200px]">
-                            <select @change="loadRolePreset(block, $event)" @click.stop class="w-full bg-zinc-950 text-zinc-300 text-xs py-1.5 px-3 rounded-lg border border-zinc-700 outline-none hover:border-zinc-500 transition cursor-pointer">
-                                <option value="" disabled selected>✨ Load Preset...</option>
-                                <option v-for="(preset, pIndex) in presetRoles" :key="pIndex" :value="preset.content">{{ preset.name }}</option>
-                            </select>
-                        </div>
-
-                        <!-- RESTORE CONSTRAINTS DROPDOWN matched to CoT -->
-                        <div v-if="block.type === 'constraints'" class="flex-1 min-w-[200px]">
-                            <select @change="(e) => block.content = e.target.value" @click.stop class="w-full bg-zinc-950 text-zinc-300 text-xs py-1.5 px-3 rounded-lg border border-zinc-700 outline-none hover:border-zinc-500 transition cursor-pointer">
-                                <option value="" disabled selected>🛡️ Load Guardrail...</option>
-                                <option v-for="(preset, pIndex) in presetConstraints" :key="pIndex" :value="preset.content">{{ preset.name }}</option>
-                            </select>
+                        <!-- Textarea -->
+                        <div class="p-1">
+                            <textarea 
+                                v-model="block.content" 
+                                class="w-full bg-[#0d0d10] text-zinc-300 p-4 rounded-b-lg outline-none border-0 resize-none font-mono text-sm leading-relaxed placeholder-zinc-700 transition-all duration-300 ease-out"
+                                :class="focusedBlock === index ? 'h-[300px] bg-[#141418] overflow-y-auto' : 'h-[100px] overflow-y-auto'"
+                                :placeholder="getPlaceholder(block.type)"></textarea>
                         </div>
                         
-                        <div class="flex gap-2 items-center">
-                            <!-- Generate Role -->
-                            <button v-if="block.type === 'task'" @click.stop="generateRoleFromTask(index)" :disabled="block.isProcessing" title="Generate Persona from this Task" class="h-8 px-3 text-xs bg-zinc-800 text-zinc-300 border border-zinc-700 rounded-lg hover:bg-zinc-700 transition flex items-center gap-2">
-                                <i v-if="block.isProcessing === 'role'" class="fa-solid fa-circle-notch fa-spin"></i>
-                                <span v-else><i class="fa-solid fa-user-astronaut"></i> ROLE</span>
-                            </button>
-
-                            <!-- Optimize Prompt -->
-                            <button v-if="['task', 'context'].includes(block.type)" @click.stop="optimizeBlock(index)" :disabled="block.isProcessing" title="Optimize Clarity & Structure" class="h-8 px-3 text-xs bg-zinc-800 text-zinc-300 border border-zinc-700 rounded-lg hover:bg-zinc-700 transition flex items-center gap-2">
-                                <i v-if="block.isProcessing === 'optimize'" class="fa-solid fa-circle-notch fa-spin"></i>
-                                <span v-else><i class="fa-solid fa-wand-magic-sparkles"></i> AI</span>
-                            </button>
-
-                            <!-- Translate Btn -->
-                            <button @click.stop="translateBlock(index)" :disabled="block.isProcessing" title="Translate to English" class="h-8 px-3 text-xs bg-zinc-800 text-zinc-300 border border-zinc-700 rounded-lg hover:bg-zinc-700 transition flex items-center gap-2">
-                                <i v-if="block.isProcessing === 'translate'" class="fa-solid fa-circle-notch fa-spin"></i>
-                                <span v-else><i class="fa-solid fa-language"></i> EN</span>
-                            </button>
-
-                            <!-- View Toggle -->
-                            <div v-if="block.history.optimized" class="flex bg-zinc-950 rounded-lg border border-zinc-700 overflow-hidden h-8">
-                                <button @click.stop="toggleBlockView(index, 'original')" :class="block.viewMode === 'original' ? 'bg-zinc-600 text-zinc-200' : 'text-zinc-500 hover:text-zinc-300'" class="px-3 text-xs transition font-bold" title="Show Original">A</button>
-                                <button @click.stop="toggleBlockView(index, 'optimized')" :class="block.viewMode === 'optimized' ? 'bg-zinc-200 text-zinc-900' : 'text-zinc-500 hover:text-zinc-300'" class="px-3 text-xs transition font-bold" title="Show Processed">B</button>
-                            </div>
-
-                            <!-- Delete Btn -->
-                            <button @click.stop="removeBlock(index)" class="h-8 w-8 flex items-center justify-center text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 rounded-lg transition ml-1">
-                                <i class="fa-solid fa-xmark"></i>
-                            </button>
+                        <!-- Tag Indicator -->
+                        <div class="absolute bottom-3 right-4 text-[10px] text-zinc-600 font-mono pointer-events-none select-none opacity-50">
+                            {{ getWrapper(block.type)[0] }} ... {{ getWrapper(block.type)[1] }}
                         </div>
                     </div>
 
-                    <!-- Textarea -->
-                    <div class="p-1">
-                        <textarea 
-                            v-model="block.content" 
-                            class="w-full bg-[#0d0d10] text-zinc-300 p-4 rounded-b-lg outline-none border-0 resize-none font-mono text-sm leading-relaxed placeholder-zinc-700 transition-all duration-300 ease-out custom-scrollbar"
-                            :class="focusedBlock === index ? 'h-[300px] bg-[#141418] overflow-y-auto' : 'h-[100px] overflow-y-auto'"
-                            :placeholder="getPlaceholder(block.type)"></textarea>
-                    </div>
-                    
-                    <!-- Tag Indicator -->
-                    <div class="absolute bottom-3 right-4 text-[10px] text-zinc-600 font-mono pointer-events-none select-none opacity-50">
-                        {{ getWrapper(block.type)[0] }} ... {{ getWrapper(block.type)[1] }}
-                    </div>
                 </div>
             </div>
         </main>
 
-        <!-- Right Column: Final Output (Fixed Box, Scrollable Content) -->
-        <aside class="w-[35%] min-w-[350px] bg-[#121214] border-l border-zinc-800 flex flex-col p-4 gap-4 flex-shrink-0 z-10" @click.stop>
-            
-            <div class="glass rounded-xl flex-1 flex flex-col overflow-hidden border border-zinc-700 shadow-2xl">
-                <!-- Fixed Header for Output Box -->
-                <div class="bg-zinc-900/90 p-3 flex justify-between items-center border-b border-zinc-800 flex-shrink-0">
-                    <span class="text-xs font-mono font-bold text-zinc-400 flex items-center gap-2">
-                        <span class="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-pulse"></span> GENERATED PROMPT
-                    </span>
-                    
-                    <div class="flex items-center gap-2">
-                        <!-- Divider -->
-                        <div class="w-px h-4 bg-zinc-700 mx-1"></div>
+        <!-- Right Column: Final Output (Smooth Width Transition) -->
+        <aside 
+            :class="showRightSidebar ? 'w-80' : 'w-0 border-l-0'"
+            class="flex-shrink-0 bg-[#121214] border-l border-zinc-800 transition-[width,border] duration-300 ease-in-out z-10 overflow-hidden" 
+            @click.stop
+        >
+            <!-- Inner fixed container prevents text reflow distortion during sliding -->
+            <div class="w-80 flex flex-col h-full p-4 gap-4">
+                <div class="glass rounded-xl flex-1 flex flex-col overflow-hidden border border-zinc-700 shadow-2xl">
+                    <!-- Fixed Header for Output Box -->
+                    <div class="bg-zinc-900/90 p-3 flex justify-between items-center border-b border-zinc-800 flex-shrink-0">
+                        <span class="text-xs font-mono font-bold text-zinc-400 flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-pulse"></span> PREVIEW
+                        </span>
+                        
+                        <div class="flex items-center gap-2">
+                            <!-- Divider -->
+                            <div class="w-px h-4 bg-zinc-700 mx-1"></div>
 
-                        <!-- Save Buttons -->
-                        <div class="flex bg-zinc-950 rounded-lg border border-zinc-800 overflow-hidden">
-                            <button @click="downloadPrompt('txt')" title="Save as .txt" class="px-3 py-1.5 text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition font-bold flex items-center gap-1">
-                                <i class="fa-solid fa-floppy-disk"></i> TXT
-                            </button>
-                            <button @click="downloadPrompt('md')" title="Save as .md" class="px-3 py-1.5 text-xs text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 border-l border-zinc-800 transition font-mono">
-                                MD
+                            <!-- Save Buttons -->
+                            <div class="flex bg-zinc-950 rounded-lg border border-zinc-800 overflow-hidden">
+                                <button @click="downloadPrompt('txt')" title="Save as .txt" class="px-3 py-1.5 text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition font-bold flex items-center gap-1">
+                                    <i class="fa-solid fa-floppy-disk"></i> TXT
+                                </button>
+                                <button @click="downloadPrompt('md')" title="Save as .md" class="px-3 py-1.5 text-xs text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 border-l border-zinc-800 transition font-mono">
+                                    MD
+                                </button>
+                            </div>
+
+                            <!-- Copy Button -->
+                            <button 
+                                @click="copyPrompt" 
+                                class="text-xs px-4 py-1.5 rounded-lg transition font-bold flex items-center gap-2 border"
+                                :class="copied ? 'bg-zinc-200 text-zinc-900 border-zinc-200' : 'bg-zinc-800 text-zinc-200 border-zinc-600 hover:bg-zinc-700'"
+                            >
+                                <i :class="copied ? 'fa-solid fa-check' : 'fa-regular fa-copy'"></i> 
+                                {{ copied ? 'COPIED!' : 'COPY' }}
                             </button>
                         </div>
-
-                        <!-- Copy Button -->
-                        <button 
-                            @click="copyPrompt" 
-                            class="text-xs px-4 py-1.5 rounded-lg transition font-bold flex items-center gap-2 border"
-                            :class="copied ? 'bg-zinc-200 text-zinc-900 border-zinc-200' : 'bg-zinc-800 text-zinc-200 border-zinc-600 hover:bg-zinc-700'"
-                        >
-                            <i :class="copied ? 'fa-solid fa-check' : 'fa-regular fa-copy'"></i> 
-                            {{ copied ? 'COPIED!' : 'COPY' }}
-                        </button>
                     </div>
+                    
+                    <!-- Scrollable Textarea -->
+                    <textarea ref="outputTextarea" readonly class="flex-1 w-full bg-[#0a0a0c] text-zinc-300 p-5 font-mono text-sm leading-loose outline-none resize-none overflow-y-auto selection:bg-zinc-700" v-model="finalPrompt"></textarea>
                 </div>
-                
-                <!-- Scrollable Textarea -->
-                <textarea ref="outputTextarea" readonly class="flex-1 w-full bg-[#0a0a0c] text-zinc-300 p-5 font-mono text-sm leading-loose outline-none resize-none overflow-y-auto selection:bg-zinc-700" v-model="finalPrompt"></textarea>
             </div>
         </aside>
 
@@ -382,7 +399,7 @@
         <!-- Right: Calculation Footer -->
         <div class="flex items-center gap-5 text-xs">
             <div class="flex items-center gap-2">
-                <span class="text-zinc-500"><i class="fa-solid fa-coins mr-1"></i>Price per 1M Tokens ($):</span>
+                <span class="text-zinc-500 hidden sm:inline"><i class="fa-solid fa-coins mr-1"></i>Price per 1M Tokens ($):</span>
                 <input v-model="customPrice" type="number" step="0.01" min="0" class="w-16 bg-zinc-900 text-zinc-300 border border-zinc-700 rounded-md px-2 py-1 outline-none focus:border-zinc-400 text-center transition">
                 <span class="font-mono text-zinc-200 font-bold ml-2">Est: ${{ estimatedCost }}</span>
             </div>
@@ -448,8 +465,9 @@
 
             const customPrice = ref(2.00);
             
-            // Layout toggles
-            const showSidebar = ref(true);
+            // Sidebar Layout toggles (Responsive Init)
+            const showSidebar = ref(window.innerWidth >= 1024);
+            const showRightSidebar = ref(window.innerWidth >= 1024);
             const middleContainer = ref(null);
 
             const copied = ref(false);
@@ -474,12 +492,27 @@
                 compactWhitespace: true
             });
 
-            // Local scroll handler for middle container
+            // Handle Responsive Resize
+            let lastWidth = window.innerWidth;
+            const handleResize = () => {
+                const currentWidth = window.innerWidth;
+                if (lastWidth >= 1024 && currentWidth < 1024) {
+                    showSidebar.value = false;
+                    showRightSidebar.value = false;
+                } else if (lastWidth < 1024 && currentWidth >= 1024) {
+                    showSidebar.value = true;
+                    showRightSidebar.value = true;
+                }
+                lastWidth = currentWidth;
+            };
+
             const handleMiddleScroll = (e) => {
                 isScrolledDown.value = e.target.scrollTop > 150;
             };
 
             onMounted(() => {
+                window.addEventListener('resize', handleResize);
+                
                 const savedKey = localStorage.getItem('siliconflow_key');
                 if (savedKey) apiKey.value = savedKey;
                 
@@ -529,9 +562,9 @@
 
             const getWrapper = (type) => {
                 const map = {
-                    'text': ['', ''],
+                    'text':['', ''],
                     'role':['<system_role>', '</system_role>'],
-                    'context': ['<context>', '</context>'],
+                    'context':['<context>', '</context>'],
                     'task':['<task>', '</task>'],
                     'code':['<code_context>', '</code_context>'], 
                     'constraints':['<constraints>', '</constraints>']
@@ -639,7 +672,6 @@ After reaching a consensus in the <think> block, output the final result.`;
                 setTimeout(() => { copied.value = false; }, 2000); 
             };
             
-            // Scroll functions targeted to middleContainer instead of window
             const toggleScroll = () => {
                 if (!middleContainer.value) return;
                 if (isScrolledDown.value) {
@@ -801,7 +833,7 @@ After reaching a consensus in the <think> block, output the final result.`;
                 tokenCount, estimatedCost, customPrice,
                 handleGlobalClick, activateBlock, animateCot,
                 customPresets, newPresetName, saveCustomPreset, loadCustomPreset, deleteCustomPreset,
-                showSidebar, middleContainer, handleMiddleScroll
+                showSidebar, showRightSidebar, middleContainer, handleMiddleScroll
             };
         }
     }).mount('#app');
