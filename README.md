@@ -1,65 +1,89 @@
-# Prompt-Optimizer-Studio
+# Prompt Optimizer Studio
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-A structured, research-backed prompt engineering tool that lets you harness the latest breakthroughs in LLM reasoning — especially **Society of Thought** (Kim et al., 2026).
+Browser-based editor for building structured LLM prompts using tagged blocks (role, task, context, constraints, code).  
+The tool assembles the blocks into a final prompt and supports several research-verified formatting techniques that improve model behavior.
 
-➡️ **Live Demo:** [**https://yuchengwei42.github.io/Prompt-Optimizer-Studio/**](https://yuchengwei42.github.io/Prompt-Optimizer-Studio/)
+→ **Live demo**: https://yuchengwei42.github.io/Prompt-Optimizer-Studio/
 
 ![Demo GIF](demo.gif)
 
 ---
 
-### 💡 Motivation
+## Core idea
 
-Modern reasoning models like DeepSeek-R1 and Gemini 3 do not simply produce longer chains of thought. According to the latest research, their superior performance comes from **internally simulating a society of thought** — a dynamic, multi-agent debate among distinct cognitive perspectives with diverse personalities and expertise.
+Instead of writing one long prompt, you create small labeled blocks that are later wrapped in consistent XML-style tags (`<role>`, `<task>`, `<context>`, etc.).  
+This structure makes it easier to reorder parts, apply presets, translate/optimize individual sections, and activate different reasoning scaffolds with toggles.
 
-This tool was built to make that breakthrough accessible: you can construct prompts using clean blocks, then instantly activate paper-verified reasoning strategies with one click.
+## Main features
 
-### ✨ Key Features
+- **Block editor** — add, reorder, delete blocks of different types  
+  - `<role>` — system persona / instructions  
+  - `<task>` — main instruction  
+  - `<context>` — documents, data, examples  
+  - `<constraints>` — rules, format requirements, guardrails  
+  - `<code_context>` — source code snippets  
+  - plain text fallback
 
-*   **🧱 Block-Based Editor** — Role, Task, Context, Code, Constraints… reorder freely.
-*   **Society of Thought Mode** (New!) — Directly implements the conversation-style scaffolding from Kim et al. (2026). The model simulates 3 distinct thinkers (Meticulous Verifier + Creative Strategist + Skeptical Auditor) engaging in realistic back-and-forth debate inside `<think>` tags. Disagreements are encouraged. No fixed turn order. Forces consensus before final answer.
-*   **Classic CoT & Prompt Repetition** — Toggle traditional techniques for comparison or specific use cases.
-*   **Research-Backed Presets** — Includes "Society of Thought (Paper Verified)" and Karpathy-style simulator.
-*   **Export & Share** — Copy or save as `.txt`/`.md`.
-*   **Multi-Language UI** — English, 繁體中文, 日本語.
-*   **100% Private** — Everything stays in your browser.
+- **One-click formatting strategies** (toggles)
+  - **Prompt Repetition** — repeats every `<task>` block at the end → improves instruction following in non-reasoning settings without changing output length or latency  
+  - **Chain-of-Thought variants** — appends different final instructions  
+    - Classical: "Let's think step-by-step."  
+    - Agentic: strict Plan → Check → Execute loop  
+    - Chain-of-Table: table-first reasoning (data-heavy tasks)  
+    - **Society of Thought**: simulates multi-perspective debate (detailed below)  
+  - **Compact whitespace** — collapses multiple blank lines for cleaner token usage
 
-### 🔬 Academic Foundations
+- **AI helpers** (using your SiliconFlow API key)
+  - Translate block to English (Hunyuan-MT-7B or similar)  
+  - Rewrite block for clarity & structure (DeepSeek-R1-Distill or Qwen2.5-Coder)  
+  - Auto-generate role from a task description
 
-This tool directly implements techniques from influential papers:
+- Built-in presets  
+  - Role examples: Coding Specialist, Academic Research Assistant, Senior Technical Writer, Society of Thought starter  
+  - Constraint examples: strict grounding, no yapping, academic citation style
 
-**1. Society of Thought (Core Feature)**  
-> Enhanced reasoning emerges from the implicit simulation of complex, multi-agent-like interactions — a "society of thought".  
-> 
-> *Kim, J. et al. (2026). Reasoning Models Generate Societies of Thought. arXiv preprint.*
+- Final output pane — live preview, copy, download as .txt or .md  
+- Token & cost estimation (adjustable $/1M token rate)
 
-The **Society of Thought** mode in this tool reproduces the exact conversation-style SFT prompt used in the paper, including:
-- Distinct personas with Big Five personality differences
-- Realistic back-and-forth dialogue (any order, multiple turns)
-- Encouragement of disagreement and perspective conflict
-- Strict XML structure (`<think>`, `<thinker1>`, etc.)
-- Forced consensus before final answer
+Everything runs in the browser. No data leaves your machine except the API calls you explicitly trigger.
 
-**2. Chain of Thought (CoT)**  
-Kojima et al. (2022). *Large Language Models are Zero-Shot Reasoners*.
+## Research techniques & measured effects
 
-**3. Prompt Repetition**  
-Observed technique that improves instruction adherence in certain models.
+The tool exposes three techniques backed by recent papers. You can turn them on/off independently to compare results.
 
----
+1. **Prompt Repetition**  
+   Paper: Leviathan et al. (2025) — [arXiv:2512.14982](https://arxiv.org/abs/2512.14982)  
+   Effect: Repeating the full input prompt (without reasoning / CoT) improves accuracy on many models (Gemini, GPT-4o-mini, Claude 3 Haiku/Sonnet, DeepSeek-V3) across benchmarks (ARC, MMLU-Pro, GSM8K, MATH, custom pattern tasks).  
+   Win rate: 47/70 model-benchmark pairs, 0 losses (statistically significant in many cases).  
+   Cost: zero extra generation tokens, zero measured latency increase in most setups.
 
-### 🛠️ Tech Stack
+2. **Chain-of-Thought (classic version)**  
+   Paper: Kojima et al. (2022) — [arXiv:2205.11916](https://arxiv.org/abs/2205.11916)  
+   Effect: Adding "Let's think step-by-step" (or variants) at the end dramatically lifts zero-shot / few-shot reasoning performance on arithmetic, commonsense, and symbolic tasks. Remains one of the simplest and most reliable baselines.
 
-*   Vue 3 (Composition API) + Tailwind CSS
-*   Font Awesome
-*   Browser `localStorage` only
+3. **Society of Thought** (main differentiator)  
+   Paper: Kim et al. (2026) — [arXiv:2601.10825](https://arxiv.org/abs/2601.10825)  
+   Core claim: Leading reasoning models (DeepSeek-R1, QwQ-32B, o-series style) achieve higher performance **not** just from longer thinking, but from implicitly simulating multi-agent debate — diverse internal perspectives with different personality traits (Big Five), expertise, and conflict/resolution patterns.  
+   Measured effects:  
+   - Reasoning models show significantly higher perspective/personality diversity than instruction-tuned baselines.  
+   - Mechanistic interpretability reveals conversational dynamics (questioning, perspective shift, disagreement, reconciliation).  
+   - RL experiments: rewarding only final accuracy causes base models to spontaneously increase conversational behaviors.  
+   - Fine-tuning with explicit conversation scaffolding accelerates reasoning gains compared to monologue-style CoT training.  
+   Tool implementation: fixed 3-persona debate scaffold (Meticulous Verifier, Creative Strategist, Skeptical Auditor) inside `<think>` tags, no fixed turn order, disagreement encouraged, consensus required before final answer.
 
-### 🤝 Contributing
+## Tech stack
 
-Contributions welcome! Especially ideas to add more paper-verified modes (Tree-of-Thoughts, Graph-of-Thoughts, etc.).
+- Vue 3 (Composition API)  
+- Tailwind CSS  
+- Font Awesome  
+- localStorage only (presets & API key)
 
-### 📄 License
+## Contributing
+
+Ideas / PRs welcome — especially additional paper-verified scaffolds (Tree-of-Thoughts, self-consistency, etc.) or better presets.
+
+## License
 
 MIT © 2026 Yu-Cheng Wei
