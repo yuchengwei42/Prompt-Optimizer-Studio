@@ -1,10 +1,10 @@
-# Gemini 3 Prompt Composer
+# Prompt-Optimizer-Studio
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 A structured, research-backed prompt engineering tool that lets you harness the latest breakthroughs in LLM reasoning — especially **Society of Thought** (Kim et al., 2026).
 
-➡️ **Live Demo:** [**https://yuchengwei42.github.io/gemini3-prompt-tool/**](https://yuchengwei42.github.io/gemini3-prompt-tool/)
+➡️ **Live Demo:** [**https://yuchengwei42.github.io/Prompt-Optimizer-Studio/**](https://yuchengwei42.github.io/Prompt-Optimizer-Studio/)
 
 ![Demo GIF](demo.gif)
 
