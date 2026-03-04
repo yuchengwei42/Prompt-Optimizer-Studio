@@ -7,8 +7,6 @@ The tool assembles the blocks into a final prompt and supports several research-
 
 → **Live demo**: https://yuchengwei42.github.io/Prompt-Optimizer-Studio/
 
-![Demo GIF](demo.gif)
-
 ---
 
 ## Core idea
