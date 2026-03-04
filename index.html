@@ -323,14 +323,18 @@
                         </div>
 
                         <!-- Textarea (removed transition-all to prevent flashing text, kept height transition) -->
-                        <div class="p-1">
+                        <div class="p-1 bg-[#0d0d10] rounded-b-lg">
                             <textarea 
                                 v-model="block.versions[block.activeVersionIndex].text" 
-                                class="w-full bg-[#0d0d10] text-zinc-300 p-4 rounded-b-lg outline-none border-0 resize-none font-mono text-sm leading-relaxed placeholder-zinc-700 transition-[height] duration-300 ease-out"
-                                :class="focusedBlock === index ? 'h-[300px] bg-[#141418] overflow-y-auto' : 'h-[100px] overflow-y-auto'"
-                                :placeholder="getPlaceholder(block.type)"></textarea>
+                                class="w-full bg-transparent text-zinc-300 p-3 outline-none border-0 resize-none font-mono text-sm leading-relaxed placeholder-zinc-700 transition-all duration-150 ease-out"
+                                :class="{
+                                    'h-[300px] bg-[#141418] overflow-y-auto rounded-lg': focusedBlock === index,
+                                    'h-[100px] overflow-y-auto rounded-lg': focusedBlock !== index
+                                }"
+                                :placeholder="getPlaceholder(block.type)"
+                            ></textarea>
                         </div>
-                        
+
                         <!-- Tag Indicator -->
                         <div class="absolute bottom-3 right-4 text-[10px] text-zinc-600 font-mono pointer-events-none select-none opacity-50">
                             {{ getWrapper(block.type)[0] }} ... {{ getWrapper(block.type)[1] }}
