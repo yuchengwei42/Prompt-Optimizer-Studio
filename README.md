@@ -5,7 +5,7 @@
 Browser-based editor for building structured LLM prompts using tagged blocks (role, task, context, constraints, code).  
 The tool assembles the blocks into a final prompt and supports several research-verified formatting techniques that improve model behavior.
 
-→ **Live demo**: https://yuchengwei42.github.io/Prompt-Optimizer-Studio/
+→ **Live demo**: https://yucheng-wei.github.io/Prompt-Optimizer-Studio/
 
 ---
 
