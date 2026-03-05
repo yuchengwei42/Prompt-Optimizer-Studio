@@ -3,26 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prompt Optimizer Studio</title>
+    <title>Prompt Optimizer Studio V2</title>
+    <!-- Favicon updated to a minimalist square with rounded corners (terminal style) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='4'/%3E%3Cpolyline points='8 10 11 13 8 16'/%3E%3Cline x1='13' y1='16' x2='16' y2='16'/%3E%3C/svg%3E">
     <!-- Vue 3 & Tailwind CSS -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Force dark scheme for browser controls (scrollbars, native dropdowns) */
         :root { color-scheme: dark; }
 
         body { font-family: 'Segoe UI', Roboto, Helvetica, sans-serif; background-color: #09090b; color: #e4e4e7; overflow: hidden; }
         
-        .glass { background: rgba(24, 24, 27, 0.8); border: 1px solid rgba(63, 63, 70, 0.5); }
-        .glass-input { background: rgba(9, 9, 11, 0.8); border: 1px solid rgba(63, 63, 70, 0.8); }
+        /* Removed border, relying purely on background shade for differentiation */
+        .glass { background: #121214; }
         
         /* Custom Scrollbar Styling */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+        ::-webkit-scrollbar, textarea::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track, textarea::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb, textarea::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover, textarea::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
         
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -30,43 +31,36 @@
         a { color: #a1a1aa; text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s;}
         a:hover { border-color: #a1a1aa; }
 
-        /* Custom Animated Dropdowns */
+        /* Highlight Animation for CoT */
+        .highlight-pulse { animation: highlight-pulse 1.5s ease-out; }
+        @keyframes highlight-pulse {
+            0% { background-color: #27272a; }
+            70% { background-color: transparent; }
+            100% { background-color: transparent; }
+        }
+
+        /* iOS Style Toggle Switch - Resized & Recolored */
+        .toggle-switch { position: relative; display: inline-block; width: 28px; height: 16px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #27272a; transition: .3s; border-radius: 16px; }
+        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 2px; bottom: 2px; background-color: #71717a; transition: .3s; border-radius: 50%; }
+        /* Checked state: Softer grayish-white (#a1a1aa) instead of pure white */
+        input:checked + .slider { background-color: #a1a1aa; }
+        input:checked + .slider:before { transform: translateX(12px); background-color: #121214; }
+
+        /* Adjust Native Number Input Spinner Spacing */
+        input[type="number"]::-webkit-inner-spin-button { margin-left: 8px; opacity: 1; }
+
+        /* Native Select Styling - Unified h-8 height without borders */
         .custom-select {
             appearance: none;
             -webkit-appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23a1a1aa'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: right 0.75rem center;
-            background-size: 0.75rem; /* Unified chevron size */
+            background-size: 0.75rem;
             padding-right: 2.25rem !important;
         }
-
-        /* Highlight Animation for CoT - Grayscale Edition using zinc-200 base */
-        .highlight-pulse { animation: highlight-pulse 1.5s ease-out; }
-        @keyframes highlight-pulse {
-            0% { box-shadow: 0 0 0 0 rgba(228, 228, 231, 0.4); background-color: rgba(228, 228, 231, 0.1); }
-            70% { box-shadow: 0 0 0 10px rgba(228, 228, 231, 0); background-color: transparent; }
-            100% { box-shadow: 0 0 0 0 rgba(228, 228, 231, 0); background-color: transparent; }
-        }
-
-        /* iOS Style Toggle Switch */
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 36px;
-            height: 20px;
-        }
-        .toggle-switch input { opacity: 0; width: 0; height: 0; }
-        .slider {
-            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #27272a; transition: .3s; border-radius: 34px; border: 1px solid #3f3f46;
-        }
-        .slider:before {
-            position: absolute; content: ""; height: 14px; width: 14px; left: 2px; bottom: 2px;
-            background-color: #a1a1aa; transition: .3s; border-radius: 50%;
-        }
-        input:checked + .slider { background-color: #e4e4e7; border-color: #e4e4e7; }
-        input:checked + .slider:before { transform: translateX(16px); background-color: #09090b; }
     </style>
 </head>
 <body>
@@ -76,23 +70,28 @@
     <!-- Main Workspace Area -->
     <div class="flex-1 flex overflow-hidden">
         
-        <!-- Left Column: Settings & Strategy Sidebar (Smooth Width Transition) -->
+        <!-- Left Column: Settings & Strategy -->
         <aside 
-            :class="showSidebar ? 'w-72' : 'w-0 border-r-0'" 
-            class="flex-shrink-0 bg-[#121214] border-r border-zinc-800 transition-[width,border] duration-300 ease-in-out z-10 overflow-hidden" 
+            :class="showSidebar ? 'w-64' : 'w-0 border-r-0'" 
+            class="flex-shrink-0 bg-[#09090b] border-r border-[#27272a] transition-[width,border] duration-300 ease-in-out z-10 overflow-hidden" 
             @click.stop
         >
-            <div class="w-72 flex flex-col h-full overflow-y-auto">
-                <div class="p-5 border-b border-zinc-800 sticky top-0 bg-[#121214]/95 backdrop-blur z-20 shrink-0">
-                    <h1 class="text-xl font-extrabold text-zinc-200 tracking-tight flex items-center gap-2">
-                        <i class="fa-solid fa-layer-group text-zinc-400"></i>Prompt Optimizer
+            <div class="w-64 flex flex-col h-full overflow-y-auto">
+                <div class="p-5 sticky top-0 bg-[#09090b]/95 backdrop-blur z-20 shrink-0">
+                    <h1 class="text-xl font-extrabold text-[#e4e4e7] tracking-tight flex items-center gap-2">
+                        <svg class="w-5 h-5 text-[#a1a1aa]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="4"></rect>
+                            <polyline points="8 10 11 13 8 16"></polyline>
+                            <line x1="13" y1="16" x2="16" y2="16"></line>
+                        </svg>
+                        Prompt Optimizer
                     </h1>
                 </div>
 
-                <div class="p-5 flex flex-col gap-6 shrink-0">
+                <div class="p-5 flex flex-col gap-6 shrink-0 pt-0">
                     <!-- API & Models -->
                     <div class="flex flex-col gap-4">
-                        <h2 @click="isAiEngineOpen = !isAiEngineOpen" class="cursor-pointer text-xs font-bold text-zinc-400 uppercase tracking-widest flex items-center justify-between select-none">
+                        <h2 @click="isAiEngineOpen = !isAiEngineOpen" class="cursor-pointer text-xs font-bold text-[#a1a1aa] uppercase tracking-widest flex items-center justify-between select-none">
                             <span class="flex items-center gap-2"><i class="fa-solid fa-microchip"></i> AI Engine</span>
                             <i class="fa-solid fa-chevron-down text-xs transition-transform duration-300" :class="isAiEngineOpen ? 'rotate-180' : ''"></i>
                         </h2>
@@ -100,62 +99,59 @@
                         <div v-show="isAiEngineOpen" class="flex flex-col gap-4">
                             <!-- API Key -->
                             <div class="flex items-center gap-2">
-                                <div class="bg-zinc-800 p-2 rounded text-zinc-400 text-sm shrink-0"><i class="fa-solid fa-key"></i></div>
-                                <input v-model="apiKey" type="password" placeholder="SiliconFlow API Key..." class="glass-input flex-1 min-w-0 outline-none text-sm text-zinc-200 placeholder-zinc-600 px-3 py-2 rounded-lg focus:border-zinc-400 transition">
-                                <button @click="saveKey" class="text-xs bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 px-3 py-2 rounded-lg font-bold text-zinc-300 transition shrink-0">Save</button>
+                                <div class="bg-[#27272a] h-8 w-8 flex items-center justify-center rounded-lg text-[#a1a1aa] text-sm shrink-0"><i class="fa-solid fa-key text-xs"></i></div>
+                                <input v-model="apiKey" type="password" placeholder="SiliconFlow API Key..." class="bg-[#27272a] flex-1 min-w-0 h-8 outline-none text-xs text-[#e4e4e7] placeholder-[#71717a] px-3 rounded-lg transition">
+                                <button @click="saveKey" class="h-8 text-xs bg-[#27272a] hover:bg-[#3f3f46] px-3 rounded-lg font-bold text-[#e4e4e7] transition shrink-0">Save</button>
                             </div>
                             
                             <!-- Models -->
                             <div class="flex flex-col gap-3">
                                 <div class="flex flex-col gap-1">
-                                    <span class="text-xs text-zinc-500 font-mono font-bold">TRANSLATION MODEL</span>
-                                    <select v-model="models.translation" class="custom-select w-full bg-zinc-950 text-zinc-300 text-xs py-2 px-3 rounded-lg border border-zinc-700 outline-none hover:border-zinc-500 focus:ring-1 focus:ring-zinc-500 transition-all duration-300 cursor-pointer">
-                                        <option value="tencent/Hunyuan-MT-7B">Hunyuan MT 7B (Recommended)</option>
-                                        <option value="Qwen/Qwen2.5-7B-Instruct">Qwen 2.5 7B Instruct</option>
-                                        <option value="THUDM/glm-4-9b-chat">GLM-4 9B Chat</option>
+                                    <span class="text-[10px] text-[#71717a] font-mono font-bold">TRANSLATION MODEL</span>
+                                    <select v-model="models.translation" class="custom-select w-full h-8 bg-[#27272a] text-[#e4e4e7] text-xs px-3 rounded-lg outline-none transition cursor-pointer">
+                                        <option v-for="opt in translationOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                                     </select>
                                 </div>
                                 <div class="flex flex-col gap-1">
-                                    <span class="text-xs text-zinc-500 font-mono font-bold">OPTIMIZATION / LOGIC MODEL</span>
-                                    <select v-model="models.optimization" class="custom-select w-full bg-zinc-950 text-zinc-300 text-xs py-2 px-3 rounded-lg border border-zinc-700 outline-none hover:border-zinc-500 focus:ring-1 focus:ring-zinc-500 transition-all duration-300 cursor-pointer">
-                                        <option value="deepseek-ai/DeepSeek-R1-Distill-Qwen-7B">DeepSeek R1 Distill (Recommended)</option>
-                                        <option value="Qwen/Qwen2.5-Coder-7B-Instruct">Qwen 2.5 Coder (Strong Logic)</option>
-                                        <option value="THUDM/GLM-4.1V-9B-Thinking">GLM 4.1V Thinking</option>
+                                    <span class="text-[10px] text-[#71717a] font-mono font-bold">OPTIMIZATION / LOGIC MODEL</span>
+                                    <select v-model="models.optimization" class="custom-select w-full h-8 bg-[#27272a] text-[#e4e4e7] text-xs px-3 rounded-lg outline-none transition cursor-pointer">
+                                        <option v-for="opt in optimizationOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                                     </select>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="h-px bg-zinc-800"></div>
+                    <!-- Separator -->
+                    <div class="mx-2 border-t border-[#27272a]"></div>
 
                     <!-- Optimization Strategy -->
                     <div class="flex flex-col gap-4">
-                        <h2 @click="isStrategyOpen = !isStrategyOpen" class="cursor-pointer text-xs font-bold text-zinc-400 uppercase tracking-widest flex items-center justify-between select-none">
+                        <h2 @click="isStrategyOpen = !isStrategyOpen" class="cursor-pointer text-xs font-bold text-[#a1a1aa] uppercase tracking-widest flex items-center justify-between select-none">
                             <span class="flex items-center gap-2"><i class="fa-solid fa-sliders"></i> Strategy</span>
                             <i class="fa-solid fa-chevron-down text-xs transition-transform duration-300" :class="isStrategyOpen ? 'rotate-180' : ''"></i>
                         </h2>
 
-                        <div v-show="isStrategyOpen" class="flex flex-col gap-4">
+                        <div v-show="isStrategyOpen" class="flex flex-col gap-3">
                             <!-- Prompt Repetition -->
-                            <div class="p-3 bg-zinc-900 border border-zinc-800 rounded-xl hover:bg-zinc-800/80 transition flex flex-col gap-2">
+                            <div class="p-3 bg-[#121214] rounded-xl hover:bg-[#18181b] transition flex flex-col gap-2">
                                 <div class="flex justify-between items-center">
-                                    <div class="text-sm text-zinc-200 font-bold">Prompt Repetition</div>
+                                    <div class="text-sm text-[#e4e4e7] font-bold">Prompt Repetition</div>
                                     <label class="toggle-switch">
                                         <input type="checkbox" v-model="settings.useRepetition">
                                         <span class="slider"></span>
                                     </label>
                                 </div>
-                                <div class="text-xs text-zinc-500 leading-relaxed">
+                                <div class="text-xs text-[#71717a] leading-relaxed">
                                     Repeats &lt;task&gt; to improve compliance.
-                                    <a href="https://arxiv.org/pdf/2512.14982" target="_blank" class="block mt-1 text-zinc-400 hover:text-zinc-200"><i class="fa-solid fa-paperclip"></i> Paper: Leviathan et al., 2025</a>
+                                    <a href="https://arxiv.org/pdf/2512.14982" target="_blank" class="block mt-1 text-[#a1a1aa] hover:text-[#e4e4e7]"><i class="fa-solid fa-paperclip"></i> Paper: Leviathan et al., 2025</a>
                                 </div>
                             </div>
 
                             <!-- CoT -->
-                            <div :class="{ 'highlight-pulse': animateCot }" class="p-3 bg-zinc-900 border border-zinc-800 rounded-xl hover:bg-zinc-800/80 transition-all duration-300 flex flex-col gap-2">
+                            <div :class="{ 'highlight-pulse': animateCot }" class="p-3 bg-[#121214] rounded-xl hover:bg-[#18181b] transition-all duration-300 flex flex-col gap-2">
                                 <div class="flex justify-between items-center">
-                                    <div class="text-sm text-zinc-200 font-bold">Chain of Thought (CoT)</div>
+                                    <div class="text-sm text-[#e4e4e7] font-bold">Chain of Thought (CoT)</div>
                                     <label class="toggle-switch">
                                         <input type="checkbox" v-model="settings.addCoT">
                                         <span class="slider"></span>
@@ -163,53 +159,51 @@
                                 </div>
                                 
                                 <div v-if="settings.addCoT" class="mt-2 flex flex-col gap-2">
-                                    <select v-model="settings.cotMode" class="custom-select w-full bg-zinc-950 text-zinc-300 text-xs py-2 px-3 rounded-lg border border-zinc-700 outline-none hover:border-zinc-500 focus:ring-1 focus:ring-zinc-500 transition-all duration-300 cursor-pointer">
-                                        <option value="agentic">Agentic (Plan-Check-Execute)</option>
-                                        <option value="classic">Classical (Let's think step-by-step)</option>
-                                        <option value="table">Chain-of-Table (For Data Analysis)</option>
-                                        <option value="society">Society of Thought (Multi-Agent Debate)</option>
+                                    <select v-model="settings.cotMode" class="custom-select w-full h-8 bg-[#27272a] text-[#e4e4e7] text-xs px-3 rounded-lg outline-none transition cursor-pointer">
+                                        <option v-for="opt in cotOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                                     </select>
-                                    <div class="text-xs text-zinc-500 leading-relaxed">
+                                    <div class="text-xs text-[#71717a] leading-relaxed">
                                         <span v-if="settings.cotMode === 'agentic'">Appends strict "Plan-Check-Execute" instruction.</span>
-                                        <a v-if="settings.cotMode === 'classic'" href="https://arxiv.org/pdf/2205.11916" target="_blank" class="block text-zinc-400 hover:text-zinc-200"><i class="fa-solid fa-paperclip"></i> Paper: Kojima et al., 2022</a>
-                                        <a v-if="settings.cotMode === 'society'" href="https://arxiv.org/pdf/2601.10825" target="_blank" class="block text-zinc-400 hover:text-zinc-200"><i class="fa-solid fa-paperclip"></i> Paper: Kim et al., 2026</a>
+                                        <span v-if="settings.cotMode === 'table'">Structures reasoning into a step-by-step data analysis table.</span>
+                                        <a v-if="settings.cotMode === 'classic'" href="https://arxiv.org/pdf/2205.11916" target="_blank" class="block mt-1 text-[#a1a1aa] hover:text-[#e4e4e7]"><i class="fa-solid fa-paperclip"></i> Paper: Kojima et al., 2022</a>
+                                        <a v-if="settings.cotMode === 'society'" href="https://arxiv.org/pdf/2601.10825" target="_blank" class="block mt-1 text-[#a1a1aa] hover:text-[#e4e4e7]"><i class="fa-solid fa-paperclip"></i> Paper: Kim et al., 2026</a>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Compact Whitespace -->
-                            <div class="p-3 bg-zinc-900 border border-zinc-800 rounded-xl hover:bg-zinc-800/80 transition flex flex-col gap-2">
+                            <div class="p-3 bg-[#121214] rounded-xl hover:bg-[#18181b] transition flex flex-col gap-2">
                                 <div class="flex justify-between items-center">
-                                    <div class="text-sm text-zinc-200 font-bold">Compact Whitespace</div>
+                                    <div class="text-sm text-[#e4e4e7] font-bold">Compact Whitespace</div>
                                     <label class="toggle-switch">
                                         <input type="checkbox" v-model="settings.compactWhitespace">
                                         <span class="slider"></span>
                                     </label>
                                 </div>
-                                <div class="text-xs text-zinc-500 leading-relaxed">Reduces consecutive newlines to standard spacing.</div>
+                                <div class="text-xs text-[#71717a] leading-relaxed">Reduces consecutive newlines to standard spacing.</div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="h-px bg-zinc-800"></div>
+                    <!-- Separator -->
+                    <div class="mx-2 border-t border-[#27272a]"></div>
 
                     <!-- Custom Presets Save/Load Area -->
-                    <div class="flex flex-col gap-3">
+                    <div class="flex flex-col gap-3 mt-1">
                         <div class="flex justify-between items-center">
-                            <span class="text-xs font-bold text-zinc-400 uppercase tracking-widest"><i class="fa-solid fa-bookmark mr-1"></i>Memory ({{ customPresets.length }}/30)</span>
+                            <span class="text-xs font-bold text-[#a1a1aa] uppercase tracking-widest"><i class="fa-solid fa-bookmark mr-1"></i>Memory ({{ customPresets.length }}/30)</span>
                         </div>
                         <div class="flex gap-2">
-                            <input v-model="newPresetName" placeholder="Name preset..." class="glass-input text-sm text-zinc-200 px-3 py-2 rounded-lg flex-1 min-w-0 outline-none focus:border-zinc-400">
-                            <button @click="saveCustomPreset" class="text-xs bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 px-3 py-2 rounded-lg font-bold text-zinc-300 transition shrink-0">Save</button>
+                            <input v-model="newPresetName" placeholder="Name preset..." class="bg-[#27272a] text-xs text-[#e4e4e7] px-3 h-8 rounded-lg flex-1 min-w-0 outline-none transition">
+                            <button @click="saveCustomPreset" class="h-8 text-xs bg-[#27272a] hover:bg-[#3f3f46] px-3 rounded-lg font-bold text-[#e4e4e7] transition shrink-0">Save</button>
                         </div>
                         
-                        <!-- Preset Tags -->
-                        <div class="flex flex-col gap-2 mt-2">
-                            <div v-for="(preset, idx) in customPresets" :key="idx" class="group flex items-center bg-zinc-900 hover:bg-zinc-800 rounded-lg px-3 py-2 border border-zinc-800 transition">
-                                <span @click="loadCustomPreset(idx)" class="text-sm text-zinc-300 group-hover:text-zinc-200 cursor-pointer flex-1 truncate" :title="preset.name">{{ preset.name }}</span>
-                                <button @click="deleteCustomPreset(idx)" class="text-zinc-600 hover:text-zinc-300 p-1"><i class="fa-solid fa-trash-can"></i></button>
+                        <div class="flex flex-col gap-2 mt-1">
+                            <div v-for="(preset, idx) in customPresets" :key="idx" class="group flex items-center bg-[#121214] hover:bg-[#18181b] rounded-lg px-3 py-2 transition">
+                                <span @click="loadCustomPreset(idx)" class="text-sm text-[#a1a1aa] group-hover:text-[#e4e4e7] cursor-pointer flex-1 truncate" :title="preset.name">{{ preset.name }}</span>
+                                <button @click="deleteCustomPreset(idx)" class="text-[#71717a] hover:text-[#e4e4e7] p-1"><i class="fa-solid fa-trash-can"></i></button>
                             </div>
-                            <span v-if="customPresets.length === 0" class="text-xs text-zinc-600 italic text-center py-4 border border-dashed border-zinc-800 rounded-lg">No saved presets yet...</span>
+                            <span v-if="customPresets.length === 0" class="text-xs text-[#71717a] italic text-center py-4 bg-[#121214] rounded-lg">No saved presets yet...</span>
                         </div>
                     </div>
                 </div>
@@ -218,126 +212,124 @@
 
         <!-- Middle Column: Block Construction Area -->
         <main class="flex-1 flex flex-col min-w-0 relative bg-[#09090b]">
-            <!-- Header area with Toggles -->
-            <div class="px-4 py-3 flex items-center justify-between border-b border-zinc-800/50 bg-[#09090b] z-10 sticky top-0">
-                <button @click.stop="showSidebar = !showSidebar" class="flex items-center gap-2 text-zinc-400 hover:text-zinc-200 transition font-bold text-sm px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 rounded-lg border border-zinc-800 shadow-sm">
-                    <i class="fa-solid" :class="showSidebar ? 'fa-bars-staggered' : 'fa-bars'"></i> Playground
+            <!-- Header area: Buttons placed at z-[100] so they never hide under tools -->
+            <div class="px-4 py-3 flex items-center justify-between bg-[#09090b] z-[100] sticky top-0">
+                <button @click.stop="showSidebar = !showSidebar" class="shrink-0 w-8 h-8 flex items-center justify-center text-[#a1a1aa] hover:text-[#e4e4e7] transition font-bold text-xs bg-[#27272a] hover:bg-[#3f3f46] rounded-lg shadow-sm">
+                    <i class="fa-solid" :class="showSidebar ? 'fa-bars-staggered' : 'fa-bars'"></i>
                 </button>
                 
-                <button @click.stop="showRightSidebar = !showRightSidebar" class="flex items-center gap-2 text-zinc-400 hover:text-zinc-200 transition font-bold text-sm px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 rounded-lg border border-zinc-800 shadow-sm">
-                    <span class="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-pulse mr-1"></span> 
-                    Generate Prompt
-                    <i class="fa-solid ml-1 text-xs" :class="showRightSidebar ? 'fa-chevron-right' : 'fa-chevron-left'"></i>
+                <button @click.stop="showRightSidebar = !showRightSidebar" class="shrink-0 w-8 h-8 flex items-center justify-center text-[#a1a1aa] hover:text-[#e4e4e7] transition font-bold text-xs bg-[#27272a] hover:bg-[#3f3f46] rounded-lg shadow-sm">
+                    <i class="fa-solid" :class="showRightSidebar ? 'fa-chevron-right' : 'fa-chevron-left'"></i>
                 </button>
             </div>
 
             <!-- Blocks Scrollable Container -->
             <div ref="middleContainer" @scroll="handleMiddleScroll" class="flex-1 overflow-y-auto w-full scroll-smooth" @click="focusedBlock = null">
-                <!-- Inner Wrapper (pb-28 added so floating buttons don't block content) -->
-                <div class="max-w-4xl mx-auto w-full flex flex-col gap-6 px-6 py-6 pb-28 lg:px-12 lg:py-8 lg:pb-28 min-h-full">
+                <div class="max-w-4xl mx-auto w-full flex flex-col gap-6 px-6 py-6 pb-28 lg:px-12 lg:py-8 min-h-full">
                     
                     <div 
                         v-for="(block, index) in blocks" 
-                        :key="index" 
+                        :key="block.id" 
+                        :draggable="draggableBlock === index"
+                        @dragstart="onDragStart($event, index)"
+                        @dragenter.prevent="onDragEnter(index)"
+                        @dragover.prevent
+                        @dragend="onDragEnd"
+                        @drop="onDrop(index)"
                         @click.stop="activateBlock(index, $event)"
-                        class="glass rounded-xl p-1 relative group transition-all duration-300 hover:border-zinc-500/50 hover:shadow-lg hover:shadow-black/50"
-                        :class="{ 'ring-1 ring-zinc-400/50 bg-zinc-800/30': focusedBlock === index }"
+                        class="bg-[#121214] rounded-xl border border-[#27272a] relative group transition-all duration-300 shadow-sm hover:shadow-lg"
+                        :class="{ 
+                            'border-[#71717a] shadow-md': focusedBlock === index,
+                            'opacity-40 scale-[0.98] z-50': dragIndex === index,
+                            'shadow-[0_-3px_0_0_#71717a]': dragOverIndex === index && dragIndex !== null && dragIndex > index,
+                            'shadow-[0_3px_0_0_#71717a]': dragOverIndex === index && dragIndex !== null && dragIndex < index
+                        }"
                     >
-
                         <!-- Toolbar -->
-                        <div class="flex flex-wrap justify-between items-center bg-zinc-900/60 p-2.5 rounded-t-lg border-b border-zinc-800/80 gap-3">
-                            <div class="flex items-center gap-3">
-                                <!-- Movement Controls -->
-                                <div class="flex items-center bg-zinc-950 rounded-lg border border-zinc-800 overflow-hidden">
-                                    <button @click.stop="moveBlockTop(index)" :disabled="index === 0" title="Move to Top" class="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 disabled:opacity-20 transition border-r border-zinc-800"><i class="fa-solid fa-angles-up text-[10px]"></i></button>
-                                    <button @click.stop="moveBlockUp(index)" :disabled="index === 0" title="Move Up" class="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 disabled:opacity-20 transition border-r border-zinc-800"><i class="fa-solid fa-angle-up text-xs"></i></button>
-                                    <button @click.stop="moveBlockDown(index)" :disabled="index === blocks.length - 1" title="Move Down" class="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 disabled:opacity-20 transition border-r border-zinc-800"><i class="fa-solid fa-angle-down text-xs"></i></button>
-                                    <button @click.stop="moveBlockBottom(index)" :disabled="index === blocks.length - 1" title="Move to Bottom" class="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 disabled:opacity-20 transition"><i class="fa-solid fa-angles-down text-[10px]"></i></button>
+                        <div class="flex flex-wrap items-center bg-transparent p-2 gap-2">
+                            <div class="flex items-center gap-2 flex-1 min-w-0 flex-wrap sm:flex-nowrap">
+                                <!-- Movement & Drag Controls -->
+                                <div class="flex items-center bg-[#27272a] rounded-lg overflow-hidden shrink-0 h-8">
+                                    <button 
+                                        @mousedown="draggableBlock = index" 
+                                        @mouseup="draggableBlock = null" 
+                                        @mouseleave="draggableBlock = null" 
+                                        class="w-7 h-full flex items-center justify-center text-[#a1a1aa] hover:text-[#e4e4e7] cursor-grab active:cursor-grabbing transition hover:bg-[#3f3f46]" 
+                                        title="Drag to Reorder">
+                                        <i class="fa-solid fa-grip-lines text-xs"></i>
+                                    </button>
+                                    <button @click.stop="moveBlockTop(index)" :disabled="index === 0" title="Move to Top" class="w-8 h-full flex items-center justify-center text-[#a1a1aa] hover:text-[#e4e4e7] hover:bg-[#3f3f46] disabled:opacity-20 transition"><i class="fa-solid fa-angles-up text-[10px]"></i></button>
+                                    <button @click.stop="moveBlockUp(index)" :disabled="index === 0" title="Move Up" class="w-8 h-full flex items-center justify-center text-[#a1a1aa] hover:text-[#e4e4e7] hover:bg-[#3f3f46] disabled:opacity-20 transition"><i class="fa-solid fa-angle-up text-xs"></i></button>
+                                    <button @click.stop="moveBlockDown(index)" :disabled="index === blocks.length - 1" title="Move Down" class="w-8 h-full flex items-center justify-center text-[#a1a1aa] hover:text-[#e4e4e7] hover:bg-[#3f3f46] disabled:opacity-20 transition"><i class="fa-solid fa-angle-down text-xs"></i></button>
+                                    <button @click.stop="moveBlockBottom(index)" :disabled="index === blocks.length - 1" title="Move to Bottom" class="w-8 h-full flex items-center justify-center text-[#a1a1aa] hover:text-[#e4e4e7] hover:bg-[#3f3f46] disabled:opacity-20 transition"><i class="fa-solid fa-angles-down text-[10px]"></i></button>
                                 </div>
 
                                 <!-- Type Selector -->
-                                <select v-model="block.type" @click.stop class="custom-select bg-zinc-950 text-zinc-300 text-xs py-1.5 px-3 rounded-lg border border-zinc-700 uppercase font-bold tracking-wide outline-none hover:border-zinc-500 focus:ring-1 focus:ring-zinc-500 transition-all duration-300 cursor-pointer">
-                                    <option value="role">Role (Persona)</option>
-                                    <option value="context">Context (Data)</option>
-                                    <option value="task">Task (Instruction)</option>
-                                    <option value="code">Code Snippet</option>
-                                    <option value="constraints">Constraints</option>
-                                    <option value="text">Plain Text</option>
+                                <select v-model="block.type" class="custom-select w-[140px] shrink-0 h-8 bg-[#27272a] text-[#e4e4e7] text-xs px-3 rounded-lg outline-none transition cursor-pointer">
+                                    <option v-for="opt in blockTypeOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                                 </select>
-                            </div>
 
-                            <!-- Preset Dropdown -->
-                            <div v-if="block.type === 'role'" class="flex-1 min-w-[200px]">
-                                <select @change="loadRolePreset(block, $event)" @click.stop class="custom-select w-full bg-zinc-950 text-zinc-300 text-xs py-1.5 px-3 rounded-lg border border-zinc-700 outline-none hover:border-zinc-500 focus:ring-1 focus:ring-zinc-500 transition-all duration-300 cursor-pointer">
-                                    <option value="" disabled selected>✨ Load Preset...</option>
-                                    <option v-for="(preset, pIndex) in presetRoles" :key="pIndex" :value="preset.content">{{ preset.name }}</option>
+                                <!-- Preset Dropdowns -->
+                                <select v-if="block.type === 'role'" v-model="block.selectedPreset" @change="loadRolePreset(block, block.selectedPreset)" class="custom-select flex-1 min-w-[120px] max-w-[240px] h-8 bg-[#27272a] text-[#e4e4e7] text-xs px-3 rounded-lg outline-none transition cursor-pointer">
+                                    <option value="" disabled>Load Preset...</option>
+                                    <option v-for="opt in rolePresetOptions" :key="opt.label" :value="opt.value">{{ opt.label }}</option>
                                 </select>
-                            </div>
-
-                            <!-- RESTORE CONSTRAINTS DROPDOWN -->
-                            <div v-if="block.type === 'constraints'" class="flex-1 min-w-[200px]">
-                                <select @change="(e) => block.versions[block.activeVersionIndex].text = e.target.value" @click.stop class="custom-select w-full bg-zinc-950 text-zinc-300 text-xs py-1.5 px-3 rounded-lg border border-zinc-700 outline-none hover:border-zinc-500 focus:ring-1 focus:ring-zinc-500 transition-all duration-300 cursor-pointer">
-                                    <option value="" disabled selected>🛡️ Load Guardrail...</option>
-                                    <option v-for="(preset, pIndex) in presetConstraints" :key="pIndex" :value="preset.content">{{ preset.name }}</option>
+                                
+                                <select v-if="block.type === 'constraints'" v-model="block.selectedPreset" @change="block.versions[block.activeVersionIndex].text = block.selectedPreset" class="custom-select flex-1 min-w-[120px] max-w-[240px] h-8 bg-[#27272a] text-[#e4e4e7] text-xs px-3 rounded-lg outline-none transition cursor-pointer">
+                                    <option value="" disabled>Load Guardrail...</option>
+                                    <option v-for="opt in constraintPresetOptions" :key="opt.label" :value="opt.value">{{ opt.label }}</option>
                                 </select>
                             </div>
                             
-                            <div class="flex gap-2 items-center">
-                                <!-- Generate Role -->
-                                <button v-if="block.type === 'task'" @click.stop="generateRoleFromTask(index)" :disabled="block.isProcessing" title="Generate Persona from this Task" class="h-8 px-3 text-xs bg-zinc-800 text-zinc-300 border border-zinc-700 rounded-lg hover:bg-zinc-700 transition flex items-center gap-2">
+                            <!-- Action Buttons -->
+                            <div class="flex gap-1.5 items-center shrink-0 ml-auto">
+                                <button v-if="block.type === 'task'" @click.stop="generateRoleFromTask(index)" :disabled="block.isProcessing" title="Generate Persona from this Task" class="h-8 px-2.5 text-xs bg-[#27272a] text-[#e4e4e7] rounded-lg hover:bg-[#3f3f46] transition flex items-center gap-1.5 shadow-sm">
                                     <i v-if="block.isProcessing === 'role'" class="fa-solid fa-circle-notch fa-spin"></i>
                                     <span v-else><i class="fa-solid fa-user-astronaut"></i> ROLE</span>
                                 </button>
-
-                                <!-- Optimize Prompt -->
-                                <button v-if="['task', 'context'].includes(block.type)" @click.stop="optimizeBlock(index)" :disabled="block.isProcessing" title="Optimize Clarity & Structure" class="h-8 px-3 text-xs bg-zinc-800 text-zinc-300 border border-zinc-700 rounded-lg hover:bg-zinc-700 transition flex items-center gap-2">
+                                <button v-if="['task', 'context'].includes(block.type)" @click.stop="optimizeBlock(index)" :disabled="block.isProcessing" title="Optimize Clarity & Structure" class="h-8 px-2.5 text-xs bg-[#27272a] text-[#e4e4e7] rounded-lg hover:bg-[#3f3f46] transition flex items-center gap-1.5 shadow-sm">
                                     <i v-if="block.isProcessing === 'optimize'" class="fa-solid fa-circle-notch fa-spin"></i>
                                     <span v-else><i class="fa-solid fa-wand-magic-sparkles"></i> AI</span>
                                 </button>
-
-                                <!-- Translate Btn -->
-                                <button @click.stop="translateBlock(index)" :disabled="block.isProcessing" title="Translate to English" class="h-8 px-3 text-xs bg-zinc-800 text-zinc-300 border border-zinc-700 rounded-lg hover:bg-zinc-700 transition flex items-center gap-2">
+                                <button @click.stop="translateBlock(index)" :disabled="block.isProcessing" title="Translate to English" class="h-8 px-2.5 text-xs bg-[#27272a] text-[#e4e4e7] rounded-lg hover:bg-[#3f3f46] transition flex items-center gap-1.5 shadow-sm">
                                     <i v-if="block.isProcessing === 'translate'" class="fa-solid fa-circle-notch fa-spin"></i>
                                     <span v-else><i class="fa-solid fa-language"></i> EN</span>
                                 </button>
-
-                                <!-- Delete Btn -->
-                                <button @click.stop="removeBlock(index)" class="h-8 w-8 flex items-center justify-center text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 rounded-lg transition ml-1">
+                                <button @click.stop="removeBlock(index)" class="h-8 w-8 flex items-center justify-center text-[#a1a1aa] hover:text-[#e4e4e7] bg-[#27272a] hover:bg-[#3f3f46] rounded-lg transition">
                                     <i class="fa-solid fa-xmark"></i>
                                 </button>
                             </div>
                         </div>
 
-                        <!-- Version Tabs (Appears only when history exists) -->
-                        <div v-if="block.versions.length > 1" class="flex items-center gap-2 px-3 py-1.5 bg-[#0a0a0c] border-b border-zinc-800/80 overflow-x-auto hide-scrollbar">
-                            <span class="text-[10px] text-zinc-500 font-bold tracking-wider mr-1"><i class="fa-solid fa-code-branch"></i> VERSIONS:</span>
+                        <!-- Version Tabs -->
+                        <div v-if="block.versions.length > 1" class="flex items-center gap-2 px-4 py-1.5 bg-transparent overflow-x-auto hide-scrollbar">
+                            <span class="text-[10px] text-[#71717a] font-bold tracking-wider mr-1"><i class="fa-solid fa-code-branch"></i> VERSIONS:</span>
                             <button 
-                                v-for="(v, vIndex) in block.versions" 
-                                :key="v.id"
+                                v-for="(v, vIndex) in block.versions" :key="v.id"
                                 @click.stop="switchVersion(index, vIndex)"
-                                class="px-2.5 py-1 text-[10px] rounded-md font-bold transition-colors duration-200 whitespace-nowrap border"
-                                :class="block.activeVersionIndex === vIndex ? 'bg-zinc-200 text-zinc-900 border-zinc-200 shadow-[0_0_10px_rgba(228,228,231,0.3)]' : 'bg-zinc-800/50 text-zinc-400 border-zinc-800 hover:text-zinc-200 hover:bg-zinc-700'"
+                                class="px-2.5 py-1 text-[10px] rounded-md font-bold transition-colors duration-200 whitespace-nowrap"
+                                :class="block.activeVersionIndex === vIndex ? 'bg-[#e4e4e7] text-[#09090b]' : 'bg-[#27272a] text-[#a1a1aa] hover:text-[#e4e4e7] hover:bg-[#3f3f46]'"
                             >
                                 {{ v.name }}
                             </button>
                         </div>
 
-                        <!-- Textarea (removed transition-all to prevent flashing text, kept height transition) -->
-                        <div class="p-1 bg-[#0d0d10] rounded-b-lg">
+                        <!-- Textarea -->
+                        <div class="p-0">
                             <textarea 
                                 v-model="block.versions[block.activeVersionIndex].text" 
-                                class="w-full bg-transparent text-zinc-300 p-3 outline-none border-0 resize-none font-mono text-sm leading-relaxed placeholder-zinc-700 transition-all duration-150 ease-out"
-                                :class="{
-                                    'h-[300px] bg-[#141418] overflow-y-auto rounded-lg': focusedBlock === index,
-                                    'h-[100px] overflow-y-auto rounded-lg': focusedBlock !== index
-                                }"
+                                class="w-full bg-transparent text-[#e4e4e7] px-3 pt-2 pb-1 outline-none resize-none font-mono text-sm leading-relaxed placeholder-[#71717a] transition-all duration-150 ease-out"
+                                :class="focusedBlock === index ? 'h-[300px] overflow-y-auto' : 'h-[100px] overflow-y-auto'"
                                 :placeholder="getPlaceholder(block.type)"
                             ></textarea>
                         </div>
 
-                        <!-- Tag Indicator -->
-                        <div class="absolute bottom-3 right-4 text-[10px] text-zinc-600 font-mono pointer-events-none select-none opacity-50">
-                            {{ getWrapper(block.type)[0] }} ... {{ getWrapper(block.type)[1] }}
+                        <!-- Stats Indicator -->
+                        <div class="px-2 pb-2 pt-0 flex justify-end w-full text-[10px] text-[#71717a] font-mono select-none pointer-events-none">
+                            <div>
+                                Tokens: ~{{ Math.ceil(block.versions[block.activeVersionIndex].text.length / 3.6) }} 
+                                | Est. Cost: ${{ getBlockCost(block.versions[block.activeVersionIndex].text) }}
+                            </div>
                         </div>
                     </div>
 
@@ -345,92 +337,105 @@
             </div>
         </main>
 
-        <!-- Right Column: Final Output (Smooth Width Transition) -->
+        <!-- Right Column: Final Output -->
         <aside 
-            :class="showRightSidebar ? 'w-80' : 'w-0 border-l-0'"
-            class="flex-shrink-0 bg-[#121214] border-l border-zinc-800 transition-[width,border] duration-300 ease-in-out z-10 overflow-hidden flex flex-col" 
+            :class="showRightSidebar ? 'w-72' : 'w-0 border-l-0'"
+            class="flex-shrink-0 bg-[#09090b] border-l border-[#27272a] transition-[width,border] duration-300 ease-in-out z-10 overflow-hidden flex flex-col" 
             @click.stop
         >
-            <!-- Inner fixed container -->
-            <div class="w-80 flex flex-col h-full p-4 gap-4">
-                <div class="glass rounded-xl flex-1 flex flex-col overflow-hidden border border-zinc-700 shadow-2xl relative">
-                    <!-- Fixed Header for Output Box -->
-                    <div class="bg-zinc-900/90 p-3 flex justify-between items-center border-b border-zinc-800 flex-shrink-0">
-                        <span class="text-xs font-mono font-bold text-zinc-400 flex items-center gap-2">
-                            <span class="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-pulse"></span> PREVIEW
-                        </span>
-                        
-                        <div class="flex items-center gap-2">
-                            <!-- Save Buttons -->
-                            <div class="flex bg-zinc-950 rounded-lg border border-zinc-800 overflow-hidden">
-                                <button @click="downloadPrompt('txt')" title="Save as .txt" class="px-3 py-1.5 text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition font-bold flex items-center gap-1">
-                                    <i class="fa-solid fa-floppy-disk"></i> TXT
-                                </button>
-                                <button @click="downloadPrompt('md')" title="Save as .md" class="px-3 py-1.5 text-xs text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 border-l border-zinc-800 transition font-mono">
-                                    MD
-                                </button>
-                            </div>
+            <div class="w-72 flex flex-col h-full gap-2 pt-4">
+                <!-- Fixed Header -->
+                <div class="px-4 pb-2 flex justify-between items-center flex-shrink-0">
+                    <span class="text-xs font-mono font-bold text-[#a1a1aa] flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-[#71717a] rounded-full animate-pulse"></span> PREVIEW
+                    </span>
+                    
+                    <div class="flex items-center gap-2">
+                        <div class="flex bg-[#27272a] rounded-lg overflow-hidden shadow-sm">
+                            <button @click="downloadPrompt('txt')" title="Save as .txt" class="h-8 px-3 text-xs text-[#a1a1aa] hover:text-[#e4e4e7] hover:bg-[#3f3f46] transition font-bold flex items-center gap-1 border-r border-[#3f3f46]">
+                                <i class="fa-solid fa-floppy-disk"></i> TXT
+                            </button>
+                            <button @click="downloadPrompt('md')" title="Save as .md" class="h-8 px-3 text-xs text-[#a1a1aa] hover:text-[#e4e4e7] hover:bg-[#3f3f46] transition font-mono">
+                                MD
+                            </button>
                         </div>
                     </div>
-                    
-                    <!-- Scrollable Textarea -->
-                    <textarea ref="outputTextarea" readonly class="flex-1 w-full bg-[#0a0a0c] text-zinc-300 p-5 font-mono text-sm leading-loose outline-none resize-none overflow-y-auto selection:bg-zinc-700" v-model="finalPrompt"></textarea>
-                    
-                    <!-- Cost & Token Info added to PREVIEW bottom -->
-                    <div class="bg-[#0e0e11] border-t border-zinc-800 p-4 flex flex-col gap-2.5 text-xs font-mono text-zinc-400 shrink-0">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-1.5">
-                                <i class="fa-solid fa-coins text-zinc-500"></i>
-                                <span>Price per 1M Tokens ($):</span>
-                            </div>
-                            <input v-model="customPrice" type="number" step="0.01" min="0" class="w-16 bg-zinc-950 text-zinc-300 border border-zinc-700 rounded px-2 py-1 outline-none focus:border-zinc-500 text-right transition shadow-inner">
+                </div>
+                
+                <!-- Output Chatbox -->
+                <div class="flex-1 p-0 flex flex-col min-h-0 relative">
+                    <textarea ref="outputTextarea" readonly class="w-full h-full bg-transparent text-[#e4e4e7] px-4 font-mono text-sm leading-loose outline-none resize-none overflow-y-auto selection:bg-[#3f3f46]" v-model="finalPrompt"></textarea>
+                </div>
+                
+                <!-- Divider -->
+                <div class="mx-4 border-t border-[#27272a] shrink-0"></div>
+
+                <!-- Cost & Token Info -->
+                <div class="px-4 pt-2 pb-4 flex flex-col gap-2.5 text-xs font-mono text-[#a1a1aa] shrink-0">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-4 text-center"><i class="fa-solid fa-coins text-[#71717a]"></i></div>
+                            <span>Price per 1M Tokens:</span>
                         </div>
-                        <div class="flex items-center justify-between">
+                        <input v-model="customPrice" type="number" step="0.01" min="0" class="h-8 w-20 bg-[#27272a] text-[#e4e4e7] rounded-lg pl-3 pr-2 outline-none text-right transition">
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-4 text-center"></div>
                             <span>Est. Cost:</span>
-                            <span class="text-zinc-200 font-bold tracking-wider">${{ estimatedCost }}</span>
                         </div>
-                        <div class="h-px bg-zinc-800/80 my-1"></div>
-                        <div class="flex items-center justify-between">
-                            <span><i class="fa-solid fa-font text-zinc-500 mr-1.5"></i>Chars:</span>
-                            <span class="text-zinc-300">{{ finalPrompt.length }}</span>
+                        <span class="text-[#e4e4e7] font-bold tracking-wider">${{ estimatedCost }}</span>
+                    </div>
+                    <div class="flex items-center justify-between mt-1">
+                        <div class="flex items-center gap-2">
+                            <div class="w-4 text-center"><i class="fa-solid fa-font text-[#71717a]"></i></div>
+                            <span>Chars:</span>
                         </div>
-                        <div class="flex items-center justify-between">
-                            <span><i class="fa-solid fa-layer-group text-zinc-500 mr-1.5"></i>Tokens:</span>
-                            <span class="text-zinc-300">~{{ tokenCount }}</span>
+                        <span class="text-[#e4e4e7]">{{ finalPrompt.length }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-4 text-center"><i class="fa-solid fa-layer-group text-[#71717a]"></i></div>
+                            <span>Tokens:</span>
                         </div>
+                        <span class="text-[#e4e4e7]">~{{ tokenCount }}</span>
                     </div>
                 </div>
             </div>
         </aside>
 
-    </div> <!-- End Main Workspace -->
+    </div>
 
     <!-- Floating Taskbar Buttons -->
-    <div class="fixed bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-2 p-1.5 bg-[#050505]/95 backdrop-blur-md border border-zinc-800/80 rounded-full shadow-[0_10px_40px_rgba(0,0,0,0.8)] z-[100]" @click.stop>
+    <div class="fixed bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 p-1.5 bg-[#09090b]/95 border border-[#27272a] backdrop-blur-md rounded-full shadow-[0_10px_40px_rgba(0,0,0,0.8)] z-[100]" @click.stop>
         
         <!-- Left: Add Block Tools -->
-        <div class="flex items-center gap-2 border-r border-zinc-800/80 pr-3">
-            <button @click="addBlock('context')" class="w-9 h-9 rounded-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700 flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-md" title="Add Context">
-                <i class="fa-solid fa-database text-sm"></i>
+        <div class="flex items-center gap-1.5 pr-1">
+            <button @click="addBlock('context')" class="w-8 h-8 rounded-full bg-[#27272a] hover:bg-[#3f3f46] text-[#a1a1aa] hover:text-[#e4e4e7] flex items-center justify-center transition-colors shadow-md" title="Add Context">
+                <i class="fa-solid fa-cube text-xs"></i>
             </button>
-            <button @click="addBlock('task')" class="w-9 h-9 rounded-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700 flex items-center justify-center transition-all duration-200 shadow-md active:scale-95" title="Add Task">
-                <i class="fa-solid fa-bullseye text-sm"></i>
+            <button @click="addBlock('task')" class="w-8 h-8 rounded-full bg-[#27272a] hover:bg-[#3f3f46] text-[#a1a1aa] hover:text-[#e4e4e7] flex items-center justify-center transition-colors shadow-md" title="Add Task">
+                <i class="fa-solid fa-bullseye text-xs"></i>
             </button>
-            <button @click="addBlock('code')" class="w-9 h-9 rounded-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700 flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-md" title="Add Code">
-                <i class="fa-solid fa-code text-sm"></i>
+            <button @click="addBlock('code')" class="w-8 h-8 rounded-full bg-[#27272a] hover:bg-[#3f3f46] text-[#a1a1aa] hover:text-[#e4e4e7] flex items-center justify-center transition-colors shadow-md" title="Add Code">
+                <i class="fa-solid fa-code text-xs"></i>
             </button>
-            <button @click="addBlock('constraints')" class="w-9 h-9 rounded-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700 flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-md" title="Add Rules">
-                <i class="fa-solid fa-shield-halved text-sm"></i>
+            <button @click="addBlock('constraints')" class="w-8 h-8 rounded-full bg-[#27272a] hover:bg-[#3f3f46] text-[#a1a1aa] hover:text-[#e4e4e7] flex items-center justify-center transition-colors shadow-md" title="Add Rules">
+                <!-- Hollow shield implemented perfectly with SVG -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             </button>
         </div>
 
+        <!-- Separator -->
+        <div class="h-4 w-px bg-[#27272a] mx-1"></div>
+
         <!-- Right: Actions -->
-        <div class="flex items-center gap-2 pl-1">
-            <button @click="copyPrompt" class="w-9 h-9 rounded-full bg-zinc-900 hover:bg-zinc-800 text-zinc-400 border border-zinc-700 flex items-center justify-center transition-all duration-200 shadow-lg active:scale-95" :class="copied ? 'bg-zinc-800 border-zinc-600 text-zinc-200' : ''" :title="copied ? 'Copied!' : 'Copy to Clipboard'">
-                <i class="transition-transform duration-300" :class="copied ? 'fa-solid fa-check scale-125' : 'fa-regular fa-copy'"></i>
+        <div class="flex items-center gap-1.5 pl-1">
+            <button @click="copyPrompt" class="w-8 h-8 rounded-full bg-[#27272a] hover:bg-[#3f3f46] text-[#a1a1aa] hover:text-[#e4e4e7] flex items-center justify-center transition-colors shadow-lg" :class="copied ? 'bg-[#3f3f46] text-[#e4e4e7]' : ''" :title="copied ? 'Copied!' : 'Copy to Clipboard'">
+                <i class="text-xs" :class="copied ? 'fa-solid fa-check' : 'fa-regular fa-copy'"></i>
             </button>
-            <button @click="toggleScroll" class="w-9 h-9 rounded-full bg-[#050505] hover:bg-zinc-800 text-zinc-500 border border-zinc-700 flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg" :title="isScrolledDown ? 'Scroll to Top' : 'Scroll to Bottom'">
-                <i class="fa-solid" :class="isScrolledDown ? 'fa-arrow-up' : 'fa-arrow-down'"></i>
+            <button @click="toggleScroll" class="w-8 h-8 rounded-full bg-[#27272a] hover:bg-[#3f3f46] text-[#a1a1aa] hover:text-[#e4e4e7] flex items-center justify-center transition-colors shadow-lg" :title="isScrolledDown ? 'Scroll to Top' : 'Scroll to Bottom'">
+                <i class="fa-solid text-xs" :class="isScrolledDown ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
             </button>
         </div>
 
@@ -439,9 +444,9 @@
 </div>
 
 <script>
-    const { createApp, ref, computed, onMounted } = Vue;
+    const { createApp, ref, computed, onMounted, onUnmounted } = Vue;
 
-    // Generic Preset Data (Unchanged)
+    // Generic Preset Data restored strictly from Original Code
     const presetRoles =[
         { 
             name: "Coding Specialist", 
@@ -480,7 +485,7 @@
         }
     ];
 
-    createApp({
+    const app = createApp({
         setup() {
             const apiKey = ref('');
             
@@ -489,31 +494,60 @@
                 optimization: 'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B'
             });
 
+            const translationOptions =[
+                { value: 'tencent/Hunyuan-MT-7B', label: 'Hunyuan MT 7B (Recommended)' },
+                { value: 'Qwen/Qwen2.5-7B-Instruct', label: 'Qwen 2.5 7B Instruct' },
+                { value: 'THUDM/glm-4-9b-chat', label: 'GLM-4 9B Chat' }
+            ];
+            const optimizationOptions =[
+                { value: 'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B', label: 'DeepSeek R1 Distill (Recommended)' },
+                { value: 'Qwen/Qwen2.5-Coder-7B-Instruct', label: 'Qwen 2.5 Coder (Strong Logic)' },
+                { value: 'THUDM/GLM-4.1V-9B-Thinking', label: 'GLM 4.1V Thinking' }
+            ];
+            const cotOptions =[
+                { value: 'agentic', label: 'Agentic (Plan-Check-Execute)' },
+                { value: 'classic', label: 'Classical (Let\'s think step-by-step)' },
+                { value: 'table', label: 'Chain-of-Table (Data Analysis)' },
+                { value: 'society', label: 'Society of Thought (Multi-Agent Debate)' }
+            ];
+            const blockTypeOptions =[
+                { value: 'role', label: 'Role (Persona)' },
+                { value: 'context', label: 'Context (Data)' },
+                { value: 'task', label: 'Task (Instruction)' },
+                { value: 'code', label: 'Code Snippet' },
+                { value: 'constraints', label: 'Constraints' },
+                { value: 'text', label: 'Plain Text' }
+            ];
+            const rolePresetOptions = computed(() => presetRoles.map(p => ({ label: p.name, value: p.content })));
+            const constraintPresetOptions = computed(() => presetConstraints.map(p => ({ label: p.name, value: p.content })));
+
             const customPrice = ref(2.00);
-            
-            // Sidebar Layout toggles (Responsive Init)
             const showSidebar = ref(window.innerWidth >= 1024);
             const showRightSidebar = ref(window.innerWidth >= 1024);
             const middleContainer = ref(null);
-
-            // Left menu toggles
             const isAiEngineOpen = ref(true);
             const isStrategyOpen = ref(true);
-
             const copied = ref(false);
             const outputTextarea = ref(null);
             const focusedBlock = ref(null);
             const isScrolledDown = ref(false);
             const animateCot = ref(false);
-            
             const customPresets = ref([]);
             const newPresetName = ref('');
 
+            const draggableBlock = ref(null);
+            const dragIndex = ref(null);
+            const dragOverIndex = ref(null);
+
+            const generateUniqueId = () => 'blk_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+
             const createBlock = (type, content = '') => ({
+                id: generateUniqueId(),
                 type,
                 isProcessing: false,
-                versions: [{ id: Date.now() + Math.random(), name: 'Original', text: content }],
-                activeVersionIndex: 0
+                versions:[{ id: Date.now() + Math.random(), name: 'Original', text: content }],
+                activeVersionIndex: 0,
+                selectedPreset: content
             });
 
             const blocks = ref([
@@ -529,55 +563,60 @@
                 compactWhitespace: true
             });
 
-            // Handle Responsive Resize
-            let lastWidth = window.innerWidth;
             const handleResize = () => {
                 const currentWidth = window.innerWidth;
-                if (lastWidth >= 1024 && currentWidth < 1024) {
-                    showSidebar.value = false;
-                    showRightSidebar.value = false;
-                } else if (lastWidth < 1024 && currentWidth >= 1024) {
-                    showSidebar.value = true;
-                    showRightSidebar.value = true;
+                if (window.lastWidth >= 1024 && currentWidth < 1024) {
+                    showSidebar.value = false; showRightSidebar.value = false;
+                } else if (window.lastWidth < 1024 && currentWidth >= 1024) {
+                    showSidebar.value = true; showRightSidebar.value = true;
                 }
-                lastWidth = currentWidth;
+                window.lastWidth = currentWidth;
             };
 
-            const handleMiddleScroll = (e) => {
-                isScrolledDown.value = e.target.scrollTop > 150;
-            };
+            const handleMiddleScroll = (e) => { isScrolledDown.value = e.target.scrollTop > 150; };
 
             onMounted(() => {
+                window.lastWidth = window.innerWidth;
                 window.addEventListener('resize', handleResize);
-                
                 const savedKey = localStorage.getItem('siliconflow_key');
                 if (savedKey) apiKey.value = savedKey;
-                
                 const savedPresets = localStorage.getItem('custom_prompt_presets');
                 if (savedPresets) customPresets.value = JSON.parse(savedPresets);
             });
 
-            const moveBlockUp = (i) => { if(i>0)[blocks.value[i], blocks.value[i-1]] =[blocks.value[i-1], blocks.value[i]]; };
-            const moveBlockDown = (i) => { if(i<blocks.value.length-1)[blocks.value[i], blocks.value[i+1]] =[blocks.value[i+1], blocks.value[i]]; };
-            const moveBlockTop = (i) => { if(i>0) blocks.value.unshift(blocks.value.splice(i, 1)[0]); };
-            const moveBlockBottom = (i) => { if(i<blocks.value.length-1) blocks.value.push(blocks.value.splice(i, 1)[0]); };
-
-            const saveKey = () => {
-                localStorage.setItem('siliconflow_key', apiKey.value);
-                alert('API Key saved.');
+            const onDragStart = (e, index) => {
+                dragIndex.value = index;
+                focusedBlock.value = null; 
+                e.dataTransfer.effectAllowed = 'move';
             };
+            const onDragEnter = (index) => {
+                if (dragIndex.value !== null && dragIndex.value !== index) dragOverIndex.value = index;
+            };
+            const onDrop = (index) => {
+                if (dragIndex.value !== null && dragIndex.value !== index) {
+                    const movedItem = blocks.value.splice(dragIndex.value, 1)[0];
+                    blocks.value.splice(index, 0, movedItem);
+                }
+                dragIndex.value = null; dragOverIndex.value = null; draggableBlock.value = null;
+                focusedBlock.value = null; 
+            };
+            const onDragEnd = () => { 
+                dragIndex.value = null; dragOverIndex.value = null; draggableBlock.value = null; 
+                focusedBlock.value = null; 
+            };
+
+            const moveBlockUp = (i) => { if(i>0) { [blocks.value[i], blocks.value[i-1]] =[blocks.value[i-1], blocks.value[i]]; focusedBlock.value = null; } };
+            const moveBlockDown = (i) => { if(i<blocks.value.length-1) {[blocks.value[i], blocks.value[i+1]] =[blocks.value[i+1], blocks.value[i]]; focusedBlock.value = null; } };
+            const moveBlockTop = (i) => { if(i>0) { blocks.value.unshift(blocks.value.splice(i, 1)[0]); focusedBlock.value = null; } };
+            const moveBlockBottom = (i) => { if(i<blocks.value.length-1) { blocks.value.push(blocks.value.splice(i, 1)[0]); focusedBlock.value = null; } };
+
+            const saveKey = () => { localStorage.setItem('siliconflow_key', apiKey.value); alert('API Key saved.'); };
 
             const saveCustomPreset = () => {
                 const name = newPresetName.value.trim();
                 if (!name) return alert('Please enter a preset name.');
                 if (customPresets.value.length >= 30) return alert('Maximum 30 custom presets allowed.');
-                
-                customPresets.value.push({
-                    name,
-                    blocks: JSON.parse(JSON.stringify(blocks.value)),
-                    settings: JSON.parse(JSON.stringify(settings.value))
-                });
-                
+                customPresets.value.push({ name, blocks: JSON.parse(JSON.stringify(blocks.value)), settings: JSON.parse(JSON.stringify(settings.value)) });
                 localStorage.setItem('custom_prompt_presets', JSON.stringify(customPresets.value));
                 newPresetName.value = '';
             };
@@ -585,30 +624,15 @@
             const loadCustomPreset = (idx) => {
                 const p = customPresets.value[idx];
                 if (p) {
-                    // Backward compatibility mapper for old history block formats
                     blocks.value = p.blocks.map(b => {
-                        if (b.versions) return JSON.parse(JSON.stringify(b));
-                        
-                        let versions =[{ id: Date.now() + Math.random(), name: 'Original', text: b.content || '' }];
-                        if (b.history && b.history.optimized) {
-                            if (b.viewMode === 'optimized') {
-                                versions[0].text = b.history.original || '';
-                                versions.push({ id: Date.now() + Math.random(), name: 'Optimized', text: b.content });
-                            } else {
-                                versions.push({ id: Date.now() + Math.random(), name: 'Optimized', text: b.history.optimized });
-                            }
-                        }
-                        return {
-                            type: b.type,
-                            isProcessing: false,
-                            versions: versions,
-                            activeVersionIndex: b.viewMode === 'optimized' ? versions.length - 1 : 0
-                        };
+                        let parsed = JSON.parse(JSON.stringify(b));
+                        if(!parsed.id) parsed.id = generateUniqueId();
+                        if(parsed.selectedPreset === undefined) parsed.selectedPreset = parsed.versions[parsed.activeVersionIndex]?.text || '';
+                        return parsed;
                     });
                     settings.value = JSON.parse(JSON.stringify(p.settings));
                 }
             };
-
             const deleteCustomPreset = (idx) => {
                 if (confirm('Delete this preset?')) {
                     customPresets.value.splice(idx, 1);
@@ -616,46 +640,21 @@
                 }
             };
 
-            const getWrapper = (type) => {
-                const map = {
-                    'text':['', ''],
-                    'role':['<system_role>', '</system_role>'],
-                    'context':['<context>', '</context>'],
-                    'task':['<task>', '</task>'],
-                    'code':['<code_context>', '</code_context>'], 
-                    'constraints':['<constraints>', '</constraints>']
-                };
-                return map[type] || ['', ''];
-            };
+            const getWrapper = (type) => ({'text':['', ''], 'role':['<system_role>', '</system_role>'], 'context':['<context>', '</context>'], 'task':['<task>', '</task>'], 'code':['<code>', '</code>'], 'constraints':['<constraints>', '</constraints>']}[type] ||['', '']);
+            const getPlaceholder = (type) => ({role: 'System Persona (e.g., You are a strict coding architect...)', context: 'Paste documents, data, or previous conversation here...', task: 'The direct instruction (e.g., "Refactor this code")...', code: 'Paste source code here...', constraints: 'Negative constraints (e.g., "No external libraries")...'}[type] || 'Content...');
 
-            const getPlaceholder = (type) => {
-                const placeholders = {
-                    role: 'System Persona (e.g., You are a strict coding architect...)',
-                    context: 'Paste documents, data, or previous conversation here...',
-                    task: 'The direct instruction (e.g., "Refactor this code")...',
-                    code: 'Paste source code here...',
-                    constraints: 'Negative constraints (e.g., "No external libraries")...'
-                };
-                return placeholders[type] || 'Content...';
-            };
-
-            const loadRolePreset = (block, event) => {
-                const val = event.target.value;
+            const loadRolePreset = (block, val) => {
+                if(!val) return;
                 block.versions[block.activeVersionIndex].text = val;
-                
                 const societyPreset = presetRoles.find(p => p.name.includes("Society of Thought"));
                 if (societyPreset && val === societyPreset.content) {
-                    settings.value.addCoT = true;
-                    settings.value.cotMode = 'society';
-                    
-                    animateCot.value = true;
-                    setTimeout(() => { animateCot.value = false; }, 1500);
+                    settings.value.addCoT = true; settings.value.cotMode = 'society';
+                    animateCot.value = true; setTimeout(() => { animateCot.value = false; }, 1500);
                 }
             };
 
             const finalPrompt = computed(() => {
                 let parts =[];
-                
                 blocks.value.forEach(block => {
                     const text = block.versions[block.activeVersionIndex].text.trim();
                     if (!text) return;
@@ -679,26 +678,11 @@
                     } else if (settings.value.cotMode === 'table') {
                         instruction = "For this data analysis task, create a table to structure your reasoning step-by-step before providing the final answer.";
                     } else if (settings.value.cotMode === 'society') {
-                        instruction = `You are simulating a collaborative group of thinkers solving a problem. Each thinker has a distinct persona and engages in a realistic, back-and-forth conversation. Thinkers may speak in any order and as many times as needed—no fixed turn order required. Do not try to be overly positive or polite during the conversation; focus on puzzle-solving. Disagreements are helpful for reasoning.
-
-Assume there are 3 thinkers and follow exactly the tag structure below:
-
-<think>
-<persona1>The Meticulous Verifier: High Conscientiousness, Low Openness. A mathematician who meticulously checks every logical step and is skeptical of untested assumptions.</persona1>
-<persona2>The Creative Strategist: High Openness, High Extraversion. An engineer who loves brainstorming visual solutions and reframing problems, often challenging initial constraints.</persona2>
-<persona3>The Skeptical Auditor: High Neuroticism, Low Agreeableness. A critical thinker who actively looks for edge cases, logical failures, and isn't afraid to express strong disagreement.</persona3>
-
-<thinker1> ... </thinker1>
-<thinker2> ... </thinker2>
-<thinker3> ... </thinker3>
-...
-</think>
-
-After reaching a consensus in the <think> block, output the final result.`;
+                        instruction = `You are simulating a collaborative group of thinkers solving a problem. Each thinker has a distinct persona and engages in a realistic, back-and-forth conversation. Thinkers may speak in any order and as many times as needed—no fixed turn order required. Do not try to be overly positive or polite during the conversation; focus on puzzle-solving. Disagreements are helpful for reasoning.\n\nAssume there are 3 thinkers and follow exactly the tag structure below:\n\n<think>\n<persona1>The Meticulous Verifier: High Conscientiousness, Low Openness. A mathematician who meticulously checks every logical step and is skeptical of untested assumptions.</persona1>\n<persona2>The Creative Strategist: High Openness, High Extraversion. An engineer who loves brainstorming visual solutions and reframing problems, often challenging initial constraints.</persona2>\n<persona3>The Skeptical Auditor: High Neuroticism, Low Agreeableness. A critical thinker who actively looks for edge cases, logical failures, and isn't afraid to express strong disagreement.</persona3>\n\n<thinker1> ... </thinker1>\n<thinker2> ... </thinker2>\n<thinker3> ... </thinker3>\n...\n</think>\n\nAfter reaching a consensus in the <think> block, output the final result.`;
                     }
 
                     if (instruction) {
-                        parts.push(`<final_instruction>\n${instruction}\n</final_instruction>`);
+                        parts.push(`<reasoning>\n${instruction}\n</reasoning>`);
                     }
                 }
 
@@ -711,56 +695,46 @@ After reaching a consensus in the <think> block, output the final result.`;
                 return result;
             });
 
-            const tokenCount = computed(() => {
-                return Math.ceil(finalPrompt.value.length / 4);
-            });
-
+            const tokenCount = computed(() => Math.ceil(finalPrompt.value.length / 4));
+            
             const estimatedCost = computed(() => {
                 const rate = parseFloat(customPrice.value) || 0;
                 return ((tokenCount.value / 1000000) * rate).toFixed(6);
             });
+
+            const getBlockCost = (text) => {
+                const safeText = text || '';
+                const rate = parseFloat(customPrice.value) || 0;
+                const tokens = Math.ceil(safeText.length / 4);
+                return ((tokens / 1000000) * rate).toFixed(6);
+            };
 
             const addBlock = (type) => blocks.value.push(createBlock(type, ''));
             const removeBlock = (i) => blocks.value.splice(i, 1);
             
             const copyPrompt = () => {
                 navigator.clipboard.writeText(finalPrompt.value);
-                copied.value = true;
-                setTimeout(() => { copied.value = false; }, 2000); 
+                copied.value = true; setTimeout(() => { copied.value = false; }, 2000); 
             };
             
             const toggleScroll = () => {
                 if (!middleContainer.value) return;
-                if (isScrolledDown.value) {
-                    middleContainer.value.scrollTo({ top: 0, behavior: 'smooth' });
-                } else {
-                    middleContainer.value.scrollTo({ top: middleContainer.value.scrollHeight, behavior: 'smooth' });
-                }
+                if (isScrolledDown.value) middleContainer.value.scrollTo({ top: 0, behavior: 'smooth' });
+                else middleContainer.value.scrollTo({ top: middleContainer.value.scrollHeight, behavior: 'smooth' });
             };
 
             const downloadPrompt = (ext) => {
                 const blob = new Blob([finalPrompt.value], { type: 'text/plain' });
                 const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `prompt_studio_${new Date().toISOString().slice(0,10)}.${ext}`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
+                const a = document.createElement('a'); a.href = url; a.download = `prompt_studio_${new Date().toISOString().slice(0,10)}.${ext}`;
+                document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
             };
 
-            const handleGlobalClick = () => {
-                focusedBlock.value = null;
-            };
+            const handleGlobalClick = () => { focusedBlock.value = null; };
 
             const activateBlock = (index, event) => {
                 focusedBlock.value = index;
-
-                if (event && (event.target.tagName === 'TEXTAREA' || event.target.tagName === 'INPUT' || event.target.tagName === 'SELECT' || event.target.tagName === 'BUTTON' || event.target.closest('button'))) {
-                    return;
-                }
-                
+                if (event && (event.target.tagName === 'TEXTAREA' || event.target.tagName === 'INPUT' || event.target.tagName === 'SELECT' || event.target.tagName === 'BUTTON' || event.target.closest('button') || event.target.closest('.relative'))) return;
                 let offset = 0;
                 for (let i = 0; i < index; i++) {
                     const b = blocks.value[i];
@@ -769,12 +743,7 @@ After reaching a consensus in the <think> block, output the final result.`;
                     const[start, end] = getWrapper(b.type);
                     offset += (start.length + text.length + end.length + 4); 
                 }
-
-                if (outputTextarea.value) {
-                    outputTextarea.value.focus();
-                    outputTextarea.value.setSelectionRange(offset, offset);
-                    outputTextarea.value.blur(); 
-                }
+                if (outputTextarea.value) { outputTextarea.value.focus(); outputTextarea.value.setSelectionRange(offset, offset); outputTextarea.value.blur(); }
             };
 
             const callApi = async (messages, model) => {
@@ -792,17 +761,12 @@ After reaching a consensus in the <think> block, output the final result.`;
                 if (!data.choices?.[0]) throw new Error(data.error?.message || 'Unknown API Error');
                 
                 let content = data.choices[0].message.content;
-                // Specifically filter out Chain-of-Thought logs like <think>...</think> generated by deep reasoning models
                 content = content.replace(/<think>[\s\S]*?(<\/think>|$)\n*/g, '').trim();
                 
                 return content;
             };
 
-            const switchVersion = (blockIndex, versionIndex) => {
-                const block = blocks.value[blockIndex];
-                if (block.activeVersionIndex === versionIndex) return;
-                block.activeVersionIndex = versionIndex;
-            };
+            const switchVersion = (blockIndex, versionIndex) => { blocks.value[blockIndex].activeVersionIndex = versionIndex; };
 
             const translateBlock = async (index) => {
                 const block = blocks.value[index];
@@ -876,18 +840,18 @@ After reaching a consensus in the <think> block, output the final result.`;
             return {
                 apiKey, saveKey, blocks, settings, finalPrompt, models, copied, outputTextarea, focusedBlock,
                 addBlock, removeBlock, translateBlock, optimizeBlock, generateRoleFromTask, switchVersion,
-                copyPrompt, downloadPrompt, toggleScroll, isScrolledDown,
-                getWrapper, getPlaceholder, loadRolePreset,
+                copyPrompt, downloadPrompt, toggleScroll, isScrolledDown, getWrapper, getPlaceholder, loadRolePreset,
                 moveBlockUp, moveBlockDown, moveBlockTop, moveBlockBottom,
-                presetRoles, presetConstraints,
-                tokenCount, estimatedCost, customPrice,
-                handleGlobalClick, activateBlock, animateCot,
+                translationOptions, optimizationOptions, cotOptions, blockTypeOptions, rolePresetOptions, constraintPresetOptions,
+                tokenCount, estimatedCost, getBlockCost, customPrice, handleGlobalClick, activateBlock, animateCot,
                 customPresets, newPresetName, saveCustomPreset, loadCustomPreset, deleteCustomPreset,
-                showSidebar, showRightSidebar, middleContainer, handleMiddleScroll,
-                isAiEngineOpen, isStrategyOpen
+                showSidebar, showRightSidebar, middleContainer, handleMiddleScroll, isAiEngineOpen, isStrategyOpen,
+                draggableBlock, dragIndex, dragOverIndex, onDragStart, onDragEnter, onDrop, onDragEnd
             };
         }
-    }).mount('#app');
+    });
+
+    app.mount('#app');
 </script>
 </body>
 </html>
